@@ -1,5 +1,6 @@
 name: Update Headers
 on:
+  push:
   workflow_dispatch:
   schedule:
     # Check for updates every Sunday at midnight.
@@ -9,7 +10,7 @@ jobs:
   update-headers:
     name: Update Header Files
     # Don't run on forks.
-    if: github.repository == 'RebelToolbox/RebelSDK'
+    if: github.repository == 'madmiraal/RebelSDK'
     runs-on: ubuntu-latest
 
     steps:
