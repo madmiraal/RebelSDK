@@ -1,0 +1,141 @@
+name: Update Headers
+on:
+  workflow_dispatch:
+  schedule:
+    # Check for updates every Sunday at midnight.
+    - cron: '0 0 * * 1'
+
+jobs:
+  update-headers:
+    name: Update Header Files
+    # Don't run on forks.
+    if: github.repository == 'RebelToolbox/RebelSDK'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Rebel SDK
+        uses: actions/checkout@v4
+
+      - name: Checkout Rebel Engine
+        uses: actions/checkout@v4
+        with:
+          repository: RebelToolbox/RebelEngine
+          path: RebelEngine
+
+      - name: Create branch
+        run: |
+          #Create branch
+          echo "::group::git fetch origin"
+          git fetch origin
+          echo "::endgroup::"
+          echo "::group::git switch main"
+          if ! git switch main 2>/dev/null ; then
+            git switch -c main origin/main
+          fi
+          echo "::endgroup::"
+          echo "::group::git switch -c update-header-files"
+          if git ls-remote --exit-code                    \
+            --heads origin refs/heads/update-header-files \
+            >/dev/null
+          then
+            echo "Use existing branch"
+            git switch -c update-header-files origin/update-header-files
+            echo "existing_branch=yes" >> "$GITHUB_ENV"
+          else
+            echo "Create new branch"
+            git switch -c update-header-files
+          fi
+          echo "::endgroup::"
+
+      - name: Update existing branch
+        if: env.existing_branch == 'yes'
+        run: |
+          #Update existing branch
+          echo "::group::git rebase main"
+          if ! git rebase main >/dev/null ; then
+            git rebase --abort
+            echo "Rebase merge conflict!"
+            echo "Previous changes need to be overwritten."
+            echo "recreate_branch=yes" >> "$GITHUB_ENV"
+          else
+            git push -f
+          fi
+          echo "::endgroup::"
+
+      - name: Recreate branch
+        if: env.recreate_branch == 'yes'
+        run: |
+          #Recreate branch
+          git switch main
+          git branch -D update-header-files
+          git switch -c update-header-files
+          git push -u -f origin update-header-files
+
+      - name: Build Rebel
+        id: build-rebel
+        uses: RebelToolbox/RebelBuildAction@v4
+        with:
+          artifact: linux-server-editor
+          build-options: platform=server production=yes
+
+      - name: Update C Headers
+        run: |
+          #Update C Headers
+          echo "Removing existing C header files."
+          rm -rf include/
+          echo "Copying C header files from RebelEngine."
+          cp -r RebelEngine/modules/gdnative/include/ .
+          echo "Copying gdnative_api.json from RebelEngine."
+          cp RebelEngine/modules/gdnative/gdnative_api.json include/
+          echo "Generating api.json"
+          RebelEngine/bin/${{ steps.build-rebel.outputs.build-filename }} --gdnative-generate-json-api include/api.json
+
+      - name: Check for changes
+        run: |
+          #Check for changes
+          echo "::group::Adding RebelEngine/ to .git/info/exclude"
+          echo 'echo "RebelEngine/" > .git/info/exclude'
+          echo "RebelEngine/" > .git/info/exclude
+          echo "::endgroup::"
+          echo "::group::Performing git diff"
+          git add .
+          if git diff --cached --exit-code ; then
+            echo "No files have changed."
+          else
+            echo "Header files have been updated."
+            echo "has_changes=yes" >> "$GITHUB_ENV"
+          fi
+          echo "::endgroup::"
+
+      - name: Create commit
+        if: env.has_changes == 'yes'
+        run: |
+          #Create commit
+          echo "Configuring Rebel Bot as the user"
+          git config user.name "Rebel Bot"
+          git config user.email "223531146+RebelToolboxBot@users.noreply.github.com"
+          echo "Creating commit"
+          git commit -m "Update Header Files"
+          echo "Pushing changes"
+          git push -u origin update-header-files
+
+      - name: Create Pull Request
+        if: env.has_changes == 'yes'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          #Create Pull Request
+          if gh pr list --state open --head update-header-files \
+            --json state | grep state
+          then
+            echo "Existing Pull Request updated"
+            echo "Please merge the Pull Request"
+          else
+            gh pr create                                                   \
+              --base main                                                  \
+              --head update-header-files                                   \
+              --title "Update C Header Files"                              \
+              --body "Updates the C header files with the latest changes." \
+              --label "PR Type: Maintenance"
+            echo "New Pull Request created"
+          fi
