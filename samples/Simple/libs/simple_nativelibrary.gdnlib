@@ -1,0 +1,14 @@
+[general]
+
+singleton=false
+load_once=true
+symbol_prefix="rebel_"
+reloadable=true
+
+[entry]
+
+Linux.64="res://libs/libsimple.so"
+
+[dependencies]
+
+Linux.64=[  ]
