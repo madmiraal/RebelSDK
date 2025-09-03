@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="DancingSprite" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/DancingSprite" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="src/dancing_sprite.cpp" />
+		<Unit filename="src/dancing_sprite.h" />
+		<Unit filename="src/include/api/android/rebel_android.h" />
+		<Unit filename="src/include/api/arvr/rebel_arvr.h" />
+		<Unit filename="src/include/api/gdnative/aabb.h" />
+		<Unit filename="src/include/api/gdnative/array.h" />
+		<Unit filename="src/include/api/gdnative/basis.h" />
+		<Unit filename="src/include/api/gdnative/color.h" />
+		<Unit filename="src/include/api/gdnative/dictionary.h" />
+		<Unit filename="src/include/api/gdnative/gdnative.h" />
+		<Unit filename="src/include/api/gdnative/node_path.h" />
+		<Unit filename="src/include/api/gdnative/plane.h" />
+		<Unit filename="src/include/api/gdnative/pool_arrays.h" />
+		<Unit filename="src/include/api/gdnative/quat.h" />
+		<Unit filename="src/include/api/gdnative/rect2.h" />
+		<Unit filename="src/include/api/gdnative/rid.h" />
+		<Unit filename="src/include/api/gdnative/string.h" />
+		<Unit filename="src/include/api/gdnative/string_name.h" />
+		<Unit filename="src/include/api/gdnative/transform.h" />
+		<Unit filename="src/include/api/gdnative/transform2d.h" />
+		<Unit filename="src/include/api/gdnative/variant.h" />
+		<Unit filename="src/include/api/gdnative/vector2.h" />
+		<Unit filename="src/include/api/gdnative/vector3.h" />
+		<Unit filename="src/include/api/gdnative_api_struct.gen.h" />
+		<Unit filename="src/include/api/nativescript/rebel_nativescript.h" />
+		<Unit filename="src/include/api/net/rebel_net.h" />
+		<Unit filename="src/include/api/net/rebel_webrtc.h" />
+		<Unit filename="src/include/api/pluginscript/rebel_pluginscript.h" />
+		<Unit filename="src/include/api/videodecoder/rebel_videodecoder.h" />
+		<Unit filename="src/include/common/aabb.h" />
+		<Unit filename="src/include/common/array.h" />
+		<Unit filename="src/include/common/basis.h" />
+		<Unit filename="src/include/common/cameramatrix.h" />
+		<Unit filename="src/include/common/color.h" />
+		<Unit filename="src/include/common/coretypes.h" />
+		<Unit filename="src/include/common/defs.h" />
+		<Unit filename="src/include/common/dictionary.h" />
+		<Unit filename="src/include/common/godot.h" />
+		<Unit filename="src/include/common/godotglobal.h" />
+		<Unit filename="src/include/common/godotprofiling.h" />
+		<Unit filename="src/include/common/math.h" />
+		<Unit filename="src/include/common/nodepath.h" />
+		<Unit filename="src/include/common/plane.h" />
+		<Unit filename="src/include/common/poolarrays.h" />
+		<Unit filename="src/include/common/quat.h" />
+		<Unit filename="src/include/common/rect2.h" />
+		<Unit filename="src/include/common/ref.h" />
+		<Unit filename="src/include/common/rid.h" />
+		<Unit filename="src/include/common/string.h" />
+		<Unit filename="src/include/common/tagdb.h" />
+		<Unit filename="src/include/common/transform.h" />
+		<Unit filename="src/include/common/transform2d.h" />
+		<Unit filename="src/include/common/variant.h" />
+		<Unit filename="src/include/common/vector2.h" />
+		<Unit filename="src/include/common/vector3.h" />
+		<Unit filename="src/include/common/wrapped.h" />
+		<Unit filename="src/library.cpp" />
+		<Unit filename="src/my_library.cpp" />
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>
