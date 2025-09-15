@@ -6,6 +6,25 @@
 
 # Rebel SDK .gitignore
 
+# Build generated
+*.a
+*.dll
+*.lib
+*.lo
+*.o
+*.obj
+*.so
+*.bc
+
 # Rebel Engine
 RebelEngine/
 logs/
+api.json
+
+# SCons
+.sconsign.dblite
+
+# Code::Blocks
+*.cbp
+*.depend
+*.layout
