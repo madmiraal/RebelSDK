@@ -23,7 +23,7 @@ namespace Rebel {
 #endif
 
 real_t Rect2::distance_to(const Vector2& p_point) const {
-    real_t dist = 1e20;
+    real_t dist = 1e20f;
 
     if (p_point.x < position.x) {
         dist = MIN(dist, position.x - p_point.x);
@@ -38,7 +38,7 @@ real_t Rect2::distance_to(const Vector2& p_point) const {
         dist = MIN(p_point.y - (position.y + size.y), dist);
     }
 
-    if (dist == 1e20) {
+    if (dist == 1e20f) {
         return 0;
     } else {
         return dist;
