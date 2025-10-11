@@ -8,10 +8,8 @@
 #define ARRAY_H
 
 #include "api/gdnative/array.h"
-#include "common/string.h"
 
 namespace Rebel {
-
 namespace helpers {
 template <typename T, typename ValueT>
 T append_all(T appendable, ValueT value) {
@@ -48,124 +46,83 @@ KV add_all(KV kv) {
 }
 } // namespace helpers
 
-class Variant;
+class Object;
 class PoolByteArray;
+class PoolColorArray;
 class PoolIntArray;
 class PoolRealArray;
 class PoolStringArray;
 class PoolVector2Array;
 class PoolVector3Array;
-class PoolColorArray;
-
-class Object;
+class String;
+class Variant;
 
 class Array {
-    rebel_array _rebel_array;
-
-    friend class Variant;
-    friend class Dictionary;
-    friend class String;
-
-    inline explicit Array(const rebel_array& other) {
-        _rebel_array = other;
-    }
-
 public:
     Array();
     Array(const Array& other);
-    Array& operator=(const Array& other);
-
-    Array(const PoolByteArray& a);
-
-    Array(const PoolIntArray& a);
-
-    Array(const PoolRealArray& a);
-
-    Array(const PoolStringArray& a);
-
-    Array(const PoolVector2Array& a);
-
-    Array(const PoolVector3Array& a);
-
-    Array(const PoolColorArray& a);
+    Array(const PoolByteArray& pool_byte_array);
+    Array(const PoolColorArray& pool_color_array);
+    Array(const PoolIntArray& pool_int_array);
+    Array(const PoolRealArray& pool_real_array);
+    Array(const PoolStringArray& pool_string_array);
+    Array(const PoolVector2Array& pool_vector2_array);
+    Array(const PoolVector3Array& pool_vector3_array);
+    ~Array();
 
     template <class... Args>
     static Array make(Args... args) {
         return helpers::append_all(Array(), args...);
     }
 
-    Variant& operator[](const int idx);
-
-    const Variant& operator[](const int idx) const;
+    Array& operator=(const Array& other);
+    Variant& operator[](int index);
+    const Variant& operator[](int index) const;
 
     void append(const Variant& v);
-
-    void clear();
-
-    int count(const Variant& v);
-
-    bool empty() const;
-
-    void erase(const Variant& v);
-
-    Variant front() const;
-
     Variant back() const;
-
-    int find(const Variant& what, const int from = 0) const;
-
-    int find_last(const Variant& what) const;
-
-    bool has(const Variant& what) const;
-
-    uint32_t hash() const;
-
-    void insert(const int pos, const Variant& value);
-
-    void invert();
-
-    bool is_shared() const;
-
-    Variant pop_back();
-
-    Variant pop_front();
-
-    void push_back(const Variant& v);
-
-    void push_front(const Variant& v);
-
-    void remove(const int idx);
-
-    int size() const;
-
-    void resize(const int size);
-
-    int rfind(const Variant& what, const int from = -1) const;
-
-    void sort();
-
-    void sort_custom(Object* obj, const String& func);
-
-    int bsearch(const Variant& value, const bool before = true);
-
+    int bsearch(const Variant& value, bool before = true);
     int bsearch_custom(
         const Variant& value,
         const Object* obj,
         const String& func,
-        const bool before = true
+        bool before = true
     );
-
-    Array duplicate(const bool deep = false) const;
-
+    void clear();
+    int count(const Variant& v) const;
+    Array duplicate(bool deep = false) const;
+    bool empty() const;
+    void erase(const Variant& v);
+    int find(const Variant& what, int from = 0) const;
+    int find_last(const Variant& what) const;
+    Variant front() const;
+    bool has(const Variant& what) const;
+    uint32_t hash() const;
+    void insert(int pos, const Variant& value);
+    void invert();
     Variant max() const;
-
     Variant min() const;
-
+    Variant pop_back();
+    Variant pop_front();
+    void push_back(const Variant& v);
+    void push_front(const Variant& v);
+    void remove(int idx);
+    void resize(int size);
+    int rfind(const Variant& what, int from = -1) const;
+    int size() const;
+    void sort();
+    void sort_custom(Object* obj, const String& func);
     void shuffle();
 
-    ~Array();
-};
+private:
+    rebel_array internal_array{};
 
+    friend class Variant;
+    friend class Dictionary;
+    friend class String;
+
+    explicit Array(const rebel_array& other);
+};
 } // namespace Rebel
 
 #endif // ARRAY_H
