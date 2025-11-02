@@ -6,11 +6,206 @@
 
 #include "common/cameramatrix.h"
 
+#include "common/aabb.h"
+#include "common/plane.h"
+#include "common/rebelmath.h"
+#include "common/rect2.h"
+#include "common/string.h"
+#include "common/transform.h"
+#include "common/vector2.h"
+#include "common/vector3.h"
+
+#include <cmath>
+
 namespace Rebel {
+namespace {
+real_t get_fov_y(const real_t fov_x, const real_t aspect) {
+    return Math::rad2deg(
+        std::atan(aspect * std::tan(Math::deg2rad(fov_x) / 2)) * 2
+    );
+}
+
+double absd(const double g) {
+    union {
+        double d;
+        uint64_t i;
+    } u;
+
+    u.d  = g;
+    u.i &= (uint64_t)9223372036854775807ll;
+    return u.d;
+}
+} // namespace
+
+CameraMatrix::CameraMatrix() {
+    set_identity();
+}
+
+CameraMatrix::CameraMatrix(const Transform& transform) :
+    matrix{
+        {transform.basis.elements[0][0],
+         transform.basis.elements[1][0],
+         transform.basis.elements[2][0],
+         0                                                                        },
+        {transform.basis.elements[0][1],
+         transform.basis.elements[1][1],
+         transform.basis.elements[2][1],
+         0                                                                        },
+        {transform.basis.elements[0][2],
+         transform.basis.elements[1][2],
+         transform.basis.elements[2][2],
+         0                                                                        },
+        {transform.origin.x,             transform.origin.y, transform.origin.z, 1}
+} {}
+
+CameraMatrix::operator String() const {
+    String string;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            string += String(j > 0 ? ", " : "\n") + String::num(matrix[i][j]);
+        }
+    }
+    return string;
+}
+
+CameraMatrix::operator Transform() const {
+    Transform transform(
+        matrix[0][0],
+        matrix[0][1],
+        matrix[0][2],
+        matrix[1][0],
+        matrix[1][1],
+        matrix[1][2],
+        matrix[2][0],
+        matrix[2][1],
+        matrix[2][2],
+        matrix[3][0],
+        matrix[3][1],
+        matrix[3][2]
+    );
+    return transform;
+}
+
+bool CameraMatrix::is_orthogonal() const {
+    return matrix[3][3] == 1.0;
+}
+
+real_t CameraMatrix::get_z_far() const {
+    Plane plane  = get_far_plane();
+    plane.normal = -plane.normal;
+    plane.normalize();
+    return plane.d;
+}
+
+real_t CameraMatrix::get_z_near() const {
+    Plane plane = get_near_plane();
+    plane.normalize();
+    return plane.d;
+}
+
+real_t CameraMatrix::get_aspect() const {
+    const Vector2 viewport_half_extents = get_viewport_half_extents();
+    return viewport_half_extents.x / viewport_half_extents.y;
+}
+
+real_t CameraMatrix::get_fov() const {
+    Plane right_plane = get_right_plane();
+    right_plane.normalize();
+    if (matrix[2][0] == 0 && matrix[2][1] == 0) {
+        return Math::rad2deg(std::acos(std::abs(right_plane.normal.x))) * 2.f;
+    }
+    // Asymmetrical frustum. Calculate the left plane's angle.
+    Plane left_plane = get_left_plane();
+    left_plane.normalize();
+    return Math::rad2deg(std::acos(std::abs(left_plane.normal.x)))
+         + Math::rad2deg(std::acos(std::abs(right_plane.normal.x)));
+}
+
+Vector2 CameraMatrix::get_viewport_half_extents() const {
+    Plane near_plane = get_near_plane();
+    near_plane.normalize();
+    Plane right_plane = get_right_plane();
+    right_plane.normalize();
+    Plane top_plane = get_top_plane();
+    top_plane.normalize();
+    Vector3 intersection;
+    near_plane.intersect_3(right_plane, top_plane, &intersection);
+    return {intersection.x, intersection.y};
+}
+
+int CameraMatrix::get_pixels_per_meter(const int pixel_width) const {
+    const Vector3 result = xform(Vector3(1, 0, -1));
+    return static_cast<int>((result.x / 2 + 0.5) * pixel_width);
+}
+
+std::vector<Plane> CameraMatrix::get_projection_planes(
+    const Transform& transform
+) const {
+    std::vector<Plane> planes;
+    Plane near_plane  = get_near_plane();
+    near_plane.normal = -near_plane.normal;
+    near_plane.normalize();
+    planes.push_back(transform.xform(near_plane));
+
+    Plane far_plane  = get_far_plane();
+    far_plane.normal = -far_plane.normal;
+    far_plane.normalize();
+    planes.push_back(transform.xform(far_plane));
+
+    Plane left_plane  = get_left_plane();
+    left_plane.normal = -left_plane.normal;
+    left_plane.normalize();
+    planes.push_back(transform.xform(left_plane));
+
+    Plane top_plane  = get_top_plane();
+    top_plane.normal = -top_plane.normal;
+    top_plane.normalize();
+    planes.push_back(transform.xform(top_plane));
+
+    Plane right_plane  = get_right_plane();
+    right_plane.normal = -right_plane.normal;
+    right_plane.normalize();
+    planes.push_back(transform.xform(right_plane));
+
+    Plane bottom_plane  = get_bottom_plane();
+    bottom_plane.normal = -bottom_plane.normal;
+    bottom_plane.normalize();
+    planes.push_back(transform.xform(bottom_plane));
+    return planes;
+}
+
+bool CameraMatrix::get_endpoints(
+    const Transform& transform,
+    Vector3* end_points
+) const {
+    const std::vector<Plane> planes  = get_projection_planes(Transform());
+    const Planes intersections[8][3] = {
+        {PLANE_FAR,  PLANE_LEFT,  PLANE_TOP   },
+        {PLANE_FAR,  PLANE_LEFT,  PLANE_BOTTOM},
+        {PLANE_FAR,  PLANE_RIGHT, PLANE_TOP   },
+        {PLANE_FAR,  PLANE_RIGHT, PLANE_BOTTOM},
+        {PLANE_NEAR, PLANE_LEFT,  PLANE_TOP   },
+        {PLANE_NEAR, PLANE_LEFT,  PLANE_BOTTOM},
+        {PLANE_NEAR, PLANE_RIGHT, PLANE_TOP   },
+        {PLANE_NEAR, PLANE_RIGHT, PLANE_BOTTOM},
+    };
+    for (int i = 0; i < 8; i++) {
+        Vector3 end_point;
+        const bool success = planes[intersections[i][0]].intersect_3(
+            planes[intersections[i][1]],
+            planes[intersections[i][2]],
+            &end_point
+        );
+        ERR_FAIL_COND_V(!success, false);
+        end_points[i] = transform.xform(end_point);
+    }
+    return true;
+}
+
 void CameraMatrix::set_identity() {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            matrix[i][j] = (i == j) ? 1 : 0;
+            matrix[i][j] = i == j ? 1 : 0;
         }
     }
 }
@@ -23,444 +218,352 @@ void CameraMatrix::set_zero() {
     }
 }
 
-Plane CameraMatrix::xform4(const Plane& p_vec4) const {
-    Plane ret;
+void CameraMatrix::set_light_bias() {
+    matrix[0][0] = .5f;
+    matrix[0][1] = 0;
+    matrix[0][2] = 0;
+    matrix[0][3] = 0;
+    matrix[1][0] = 0;
+    matrix[1][1] = .5f;
+    matrix[1][2] = 0;
+    matrix[1][3] = 0;
+    matrix[2][0] = 0;
+    matrix[2][1] = 0;
+    matrix[2][2] = .5f;
+    matrix[2][3] = 0;
+    matrix[3][0] = .5f;
+    matrix[3][1] = .5f;
+    matrix[3][2] = .5f;
+    matrix[3][3] = 1.f;
+}
 
-    ret.normal.x = matrix[0][0] * p_vec4.normal.x
-                 + matrix[1][0] * p_vec4.normal.y
-                 + matrix[2][0] * p_vec4.normal.z + matrix[3][0] * p_vec4.d;
-    ret.normal.y = matrix[0][1] * p_vec4.normal.x
-                 + matrix[1][1] * p_vec4.normal.y
-                 + matrix[2][1] * p_vec4.normal.z + matrix[3][1] * p_vec4.d;
-    ret.normal.z = matrix[0][2] * p_vec4.normal.x
-                 + matrix[1][2] * p_vec4.normal.y
-                 + matrix[2][2] * p_vec4.normal.z + matrix[3][2] * p_vec4.d;
-    ret.d = matrix[0][3] * p_vec4.normal.x + matrix[1][3] * p_vec4.normal.y
-          + matrix[2][3] * p_vec4.normal.z + matrix[3][3] * p_vec4.d;
-    return ret;
+void CameraMatrix::set_light_atlas_rect(const Rect2& rect2) {
+    matrix[0][0] = rect2.size.width;
+    matrix[0][1] = 0;
+    matrix[0][2] = 0;
+    matrix[0][3] = 0;
+    matrix[1][0] = 0;
+    matrix[1][1] = rect2.size.height;
+    matrix[1][2] = 0;
+    matrix[1][3] = 0;
+    matrix[2][0] = 0;
+    matrix[2][1] = 0;
+    matrix[2][2] = 1.f;
+    matrix[2][3] = 0;
+    matrix[3][0] = rect2.position.x;
+    matrix[3][1] = rect2.position.y;
+    matrix[3][2] = 0;
+    matrix[3][3] = 1.f;
 }
 
 void CameraMatrix::set_perspective(
-    real_t p_fovy_degrees,
-    real_t p_aspect,
-    real_t p_z_near,
-    real_t p_z_far,
-    bool p_flip_fov
+    real_t fov_y_degrees,
+    const real_t aspect,
+    const real_t z_near,
+    const real_t z_far,
+    const bool flip_fov
 ) {
-    if (p_flip_fov) {
-        p_fovy_degrees = get_fovy(p_fovy_degrees, 1.0 / p_aspect);
+    if (flip_fov) {
+        fov_y_degrees = get_fov_y(fov_y_degrees, 1.f / aspect);
     }
-
-    real_t sine, cotangent, deltaZ;
-    real_t radians = p_fovy_degrees / 2.0 * Math_PI / 180.0;
-
-    deltaZ = p_z_far - p_z_near;
-    sine   = sin(radians);
-
-    if ((deltaZ == 0) || (sine == 0) || (p_aspect == 0)) {
+    const real_t radians = Math::deg2rad(fov_y_degrees);
+    const real_t z_delta = z_far - z_near;
+    const real_t sine    = std::sin(radians);
+    const real_t cot     = std::cos(radians) / sine;
+    if (z_delta == 0 || sine == 0 || aspect == 0) {
         return;
     }
-    cotangent = cos(radians) / sine;
-
     set_identity();
-
-    matrix[0][0] = cotangent / p_aspect;
-    matrix[1][1] = cotangent;
-    matrix[2][2] = -(p_z_far + p_z_near) / deltaZ;
+    matrix[0][0] = cot / aspect;
+    matrix[1][1] = cot;
+    matrix[2][2] = -(z_far + z_near) / z_delta;
     matrix[2][3] = -1;
-    matrix[3][2] = -2 * p_z_near * p_z_far / deltaZ;
+    matrix[3][2] = -2 * z_near * z_far / z_delta;
     matrix[3][3] = 0;
 }
 
 void CameraMatrix::set_perspective(
-    real_t p_fovy_degrees,
-    real_t p_aspect,
-    real_t p_z_near,
-    real_t p_z_far,
-    bool p_flip_fov,
-    int p_eye,
-    real_t p_intraocular_dist,
-    real_t p_convergence_dist
+    real_t fov_y_degrees,
+    const real_t aspect,
+    const real_t z_near,
+    const real_t z_far,
+    const bool flip_fov,
+    const int eye,
+    const real_t intraocular_distance,
+    const real_t convergence_distance
 ) {
-    if (p_flip_fov) {
-        p_fovy_degrees = get_fovy(p_fovy_degrees, 1.0 / p_aspect);
+    if (flip_fov) {
+        fov_y_degrees = get_fov_y(fov_y_degrees, 1 / aspect);
     }
-
-    real_t left, right, modeltranslation, ymax, xmax, frustumshift;
-
-    ymax         = p_z_near * tan(p_fovy_degrees * Math_PI / 360.0f);
-    xmax         = ymax * p_aspect;
-    frustumshift = (p_intraocular_dist / 2.0) * p_z_near / p_convergence_dist;
-
-    switch (p_eye) {
-        case 1: { // left eye
-            left             = -xmax + frustumshift;
-            right            = xmax + frustumshift;
-            modeltranslation = p_intraocular_dist / 2.0;
-        }; break;
-        case 2: { // right eye
-            left             = -xmax - frustumshift;
-            right            = xmax - frustumshift;
-            modeltranslation = -p_intraocular_dist / 2.0;
-        }; break;
-        default: { // mono, should give the same result as
-                   // set_perspective(p_fovy_degrees,p_aspect,p_z_near,p_z_far,p_flip_fov)
-            left             = -xmax;
-            right            = xmax;
+    const real_t y_max = z_near * std::tan(Math::deg2rad(fov_y_degrees));
+    const real_t x_max = y_max * aspect;
+    const real_t frustum_shift =
+        intraocular_distance / 2 * z_near / convergence_distance;
+    real_t left, right, modeltranslation;
+    switch (eye) {
+        case 1: { // Left eye.
+            left             = -x_max + frustum_shift;
+            right            = x_max + frustum_shift;
+            modeltranslation = intraocular_distance / 2;
+        } break;
+        case 2: { // Right eye,
+            left             = -x_max - frustum_shift;
+            right            = x_max - frustum_shift;
+            modeltranslation = -intraocular_distance / 2;
+        } break;
+        default: { // Mono
+            // Should give the same result as set_perspective(
+            // fov_y_degrees, aspect, z_near, z_far, flip_fov)
+            left             = -x_max;
+            right            = x_max;
             modeltranslation = 0.0;
-        }; break;
-    };
+        } break;
+    }
+    set_frustum(left, right, -y_max, y_max, z_near, z_far);
 
-    set_frustum(left, right, -ymax, ymax, p_z_near, p_z_far);
-
-    // translate matrix by (modeltranslation, 0.0, 0.0)
-    CameraMatrix cm;
-    cm.set_identity();
-    cm.matrix[3][0] = modeltranslation;
-    *this           = *this * cm;
+    // Translate matrix by (modeltranslation, 0.0, 0.0)
+    CameraMatrix translation_matrix;
+    translation_matrix.matrix[3][0] = modeltranslation;
+    *this                           = *this * translation_matrix;
 }
 
 void CameraMatrix::set_for_hmd(
-    int p_eye,
-    real_t p_aspect,
-    real_t p_intraocular_dist,
-    real_t p_display_width,
-    real_t p_display_to_lens,
-    real_t p_oversample,
-    real_t p_z_near,
-    real_t p_z_far
+    const int eye,
+    const real_t aspect,
+    const real_t intraocular_distance,
+    const real_t display_width,
+    const real_t display_to_lens,
+    const real_t over_sample,
+    const real_t z_near,
+    const real_t z_far
 ) {
-    // we first calculate our base frustum on our values without taking our lens
-    // magnification into account.
-    real_t f1 = (p_intraocular_dist * 0.5) / p_display_to_lens;
-    real_t f2 =
-        ((p_display_width - p_intraocular_dist) * 0.5) / p_display_to_lens;
-    real_t f3 = (p_display_width / 4.0) / p_display_to_lens;
+    // Calculate the base frustum without considering lens magnification.
+    real_t f1 = intraocular_distance / 2.f / display_to_lens;
+    real_t f2 = (display_width - intraocular_distance) / 2.f / display_to_lens;
+    real_t f3 = display_width / 4.f / display_to_lens;
 
-    // now we apply our oversample factor to increase our FOV. how much we
-    // oversample is always a balance we strike between performance and how much
-    // we're willing to sacrifice in FOV.
-    real_t add  = ((f1 + f2) * (p_oversample - 1.0)) / 2.0;
-    f1         += add;
-    f2         += add;
-    f3         *= p_oversample;
+    // Apply over sample factor to increase FOV.
+    // Over sample is always a balance between performance and FOV to sacrifice.
+    const real_t add  = (f1 + f2) * (over_sample - 1.f) / 2.f;
+    f1               += add;
+    f2               += add;
+    f3               *= over_sample;
+    // Keep aspect ratio.
+    f3               /= aspect;
 
-    // always apply KEEP_WIDTH aspect ratio
-    f3 /= p_aspect;
-
-    switch (p_eye) {
-        case 1: { // left eye
+    switch (eye) {
+        case 1: { // Left eye.
             set_frustum(
-                -f2 * p_z_near,
-                f1 * p_z_near,
-                -f3 * p_z_near,
-                f3 * p_z_near,
-                p_z_near,
-                p_z_far
+                -f2 * z_near,
+                f1 * z_near,
+                -f3 * z_near,
+                f3 * z_near,
+                z_near,
+                z_far
             );
-        }; break;
-        case 2: { // right eye
+        } break;
+        case 2: { // Right eye.
             set_frustum(
-                -f1 * p_z_near,
-                f2 * p_z_near,
-                -f3 * p_z_near,
-                f3 * p_z_near,
-                p_z_near,
-                p_z_far
+                -f1 * z_near,
+                f2 * z_near,
+                -f3 * z_near,
+                f3 * z_near,
+                z_near,
+                z_far
             );
-        }; break;
-        default: { // mono, does not apply here!
-        }; break;
-    };
-};
-
-void CameraMatrix::set_orthogonal(
-    real_t p_left,
-    real_t p_right,
-    real_t p_bottom,
-    real_t p_top,
-    real_t p_znear,
-    real_t p_zfar
-) {
-    set_identity();
-
-    matrix[0][0] = 2.0 / (p_right - p_left);
-    matrix[3][0] = -((p_right + p_left) / (p_right - p_left));
-    matrix[1][1] = 2.0 / (p_top - p_bottom);
-    matrix[3][1] = -((p_top + p_bottom) / (p_top - p_bottom));
-    matrix[2][2] = -2.0 / (p_zfar - p_znear);
-    matrix[3][2] = -((p_zfar + p_znear) / (p_zfar - p_znear));
-    matrix[3][3] = 1.0;
+        } break;
+        default: { // Mono
+            // Does not apply here!
+        } break;
+    }
 }
 
 void CameraMatrix::set_orthogonal(
-    real_t p_size,
-    real_t p_aspect,
-    real_t p_znear,
-    real_t p_zfar,
-    bool p_flip_fov
+    real_t size,
+    const real_t aspect,
+    const real_t z_near,
+    const real_t z_far,
+    const bool flip_fov
 ) {
-    if (!p_flip_fov) {
-        p_size *= p_aspect;
+    if (!flip_fov) {
+        size *= aspect;
     }
-
     set_orthogonal(
-        -p_size / 2,
-        +p_size / 2,
-        -p_size / p_aspect / 2,
-        +p_size / p_aspect / 2,
-        p_znear,
-        p_zfar
+        -size / 2,
+        +size / 2,
+        -size / aspect / 2,
+        +size / aspect / 2,
+        z_near,
+        z_far
     );
 }
 
-void CameraMatrix::set_frustum(
-    real_t p_left,
-    real_t p_right,
-    real_t p_bottom,
-    real_t p_top,
-    real_t p_near,
-    real_t p_far
+void CameraMatrix::set_orthogonal(
+    const real_t left,
+    const real_t right,
+    const real_t bottom,
+    const real_t top,
+    const real_t z_near,
+    const real_t z_far
 ) {
-    ERR_FAIL_COND(p_right <= p_left);
-    ERR_FAIL_COND(p_top <= p_bottom);
-    ERR_FAIL_COND(p_far <= p_near);
-
-    real_t* te = &matrix[0][0];
-    real_t x   = 2 * p_near / (p_right - p_left);
-    real_t y   = 2 * p_near / (p_top - p_bottom);
-
-    real_t a = (p_right + p_left) / (p_right - p_left);
-    real_t b = (p_top + p_bottom) / (p_top - p_bottom);
-    real_t c = -(p_far + p_near) / (p_far - p_near);
-    real_t d = -2 * p_far * p_near / (p_far - p_near);
-
-    te[0]  = x;
-    te[1]  = 0;
-    te[2]  = 0;
-    te[3]  = 0;
-    te[4]  = 0;
-    te[5]  = y;
-    te[6]  = 0;
-    te[7]  = 0;
-    te[8]  = a;
-    te[9]  = b;
-    te[10] = c;
-    te[11] = -1;
-    te[12] = 0;
-    te[13] = 0;
-    te[14] = d;
-    te[15] = 0;
+    matrix[0][0] = 2.f / (right - left);
+    matrix[0][1] = 0;
+    matrix[0][2] = 0;
+    matrix[0][3] = 0;
+    matrix[1][0] = 0;
+    matrix[1][1] = 2.f / (top - bottom);
+    matrix[1][2] = 0;
+    matrix[1][3] = 0;
+    matrix[2][0] = 0;
+    matrix[2][1] = 0;
+    matrix[2][2] = -2.f / (z_far - z_near);
+    matrix[2][3] = 0;
+    matrix[3][0] = -((right + left) / (right - left));
+    matrix[3][1] = -((top + bottom) / (top - bottom));
+    matrix[3][2] = -((z_far + z_near) / (z_far - z_near));
+    matrix[3][3] = 1.f;
 }
 
 void CameraMatrix::set_frustum(
-    real_t p_size,
-    real_t p_aspect,
-    Vector2 p_offset,
-    real_t p_near,
-    real_t p_far,
-    bool p_flip_fov
+    const real_t left,
+    const real_t right,
+    const real_t bottom,
+    const real_t top,
+    const real_t z_near,
+    const real_t z_far
 ) {
-    if (!p_flip_fov) {
-        p_size *= p_aspect;
-    }
+    ERR_FAIL_COND(right <= left);
+    ERR_FAIL_COND(top <= bottom);
+    ERR_FAIL_COND(z_far <= z_near);
+    matrix[0][0] = 2.f * z_near / (right - left);
+    matrix[0][1] = 0;
+    matrix[0][2] = 0;
+    matrix[0][3] = 0;
+    matrix[1][0] = 0;
+    matrix[1][1] = 2.f * z_near / (top - bottom);
+    matrix[1][2] = 0;
+    matrix[1][3] = 0;
+    matrix[2][0] = (right + left) / (right - left);
+    matrix[2][1] = (top + bottom) / (top - bottom);
+    matrix[2][2] = -(z_far + z_near) / (z_far - z_near);
+    matrix[2][3] = -1.f;
+    matrix[3][0] = 0;
+    matrix[3][1] = 0;
+    matrix[3][2] = -2.f * z_far * z_near / (z_far - z_near);
+    matrix[3][3] = 0;
+}
 
+void CameraMatrix::set_frustum(
+    real_t size,
+    const real_t aspect,
+    const Vector2 offset,
+    const real_t z_near,
+    const real_t z_far,
+    const bool flip_fov
+) {
+    if (!flip_fov) {
+        size *= aspect;
+    }
     set_frustum(
-        -p_size / 2 + p_offset.x,
-        +p_size / 2 + p_offset.x,
-        -p_size / p_aspect / 2 + p_offset.y,
-        +p_size / p_aspect / 2 + p_offset.y,
-        p_near,
-        p_far
+        -size / 2.f + offset.x,
+        +size / 2.f + offset.x,
+        -size / aspect / 2.f + offset.y,
+        +size / aspect / 2.f + offset.y,
+        z_near,
+        z_far
     );
 }
 
-real_t CameraMatrix::get_z_far() const {
-    const real_t* matrix = (const real_t*)this->matrix;
-    Plane new_plane      = Plane(
-        matrix[3] - matrix[2],
-        matrix[7] - matrix[6],
-        matrix[11] - matrix[10],
-        matrix[15] - matrix[14]
-    );
+void CameraMatrix::invert() {
+    // Pivot matrix locations.
+    int pivot_i[4], pivot_j[4];
+    real_t determinant = 1.0;
+    for (int k = 0; k < 4; k++) {
+        // Locate pivot element.
+        real_t pivot_value = matrix[k][k];
+        pivot_i[k]         = k;
+        pivot_j[k]         = k;
+        for (int i = k; i < 4; i++) {
+            for (int j = k; j < 4; j++) {
+                if (absd(matrix[i][j]) > absd(pivot_value)) {
+                    pivot_i[k]  = i;
+                    pivot_j[k]  = j;
+                    pivot_value = matrix[i][j];
+                }
+            }
+        }
+        // Determinant is the product of pivots.
+        determinant *= pivot_value;
+        ERR_FAIL_COND(absd(determinant) < 1e-7);
 
-    new_plane.normal = -new_plane.normal;
-    new_plane.normalize();
+        // Interchange rows.
+        int row = pivot_i[k];
+        if (row != k) {
+            for (int j = 0; j < 4; j++) {
+                const real_t temp = -matrix[k][j];
+                matrix[k][j]      = matrix[row][j];
+                matrix[row][j]    = temp;
+            }
+        }
 
-    return new_plane.d;
-}
+        // Interchange columns.
+        int col = pivot_j[k];
+        if (col != k) { /** If columns are different **/
+            for (int i = 0; i < 4; i++) {
+                const real_t temp = -matrix[i][k];
+                matrix[i][k]      = matrix[i][col];
+                matrix[i][col]    = temp;
+            }
+        }
 
-real_t CameraMatrix::get_z_near() const {
-    const real_t* matrix = (const real_t*)this->matrix;
-    Plane new_plane      = Plane(
-        matrix[3] + matrix[2],
-        matrix[7] + matrix[6],
-        matrix[11] + matrix[10],
-        -matrix[15] - matrix[14]
-    );
+        // Divide column by minus pivot value.
+        for (row = 0; row < 4; row++) {
+            if (row != k) {
+                matrix[row][k] /= -pivot_value;
+            }
+        }
 
-    new_plane.normalize();
-    return new_plane.d;
-}
+        // Reduce the matrix.
+        for (row = 0; row < 4; row++) {
+            const real_t value = matrix[row][k];
+            for (col = 0; col < 4; col++) {
+                if (row != k && col != k) {
+                    matrix[row][col] += value * matrix[k][col];
+                }
+            }
+        }
 
-Vector2 CameraMatrix::get_viewport_half_extents() const {
-    const real_t* matrix = (const real_t*)this->matrix;
-    ///////--- Near Plane ---///////
-    Plane near_plane     = Plane(
-        matrix[3] + matrix[2],
-        matrix[7] + matrix[6],
-        matrix[11] + matrix[10],
-        -matrix[15] - matrix[14]
-    );
-    near_plane.normalize();
+        // Divide row by pivot.
+        for (col = 0; col < 4; col++) {
+            if (col != k) {
+                matrix[k][col] /= pivot_value;
+            }
+        }
 
-    ///////--- Right Plane ---///////
-    Plane right_plane = Plane(
-        matrix[3] - matrix[0],
-        matrix[7] - matrix[4],
-        matrix[11] - matrix[8],
-        -matrix[15] + matrix[12]
-    );
-    right_plane.normalize();
-
-    Plane top_plane = Plane(
-        matrix[3] - matrix[1],
-        matrix[7] - matrix[5],
-        matrix[11] - matrix[9],
-        -matrix[15] + matrix[13]
-    );
-    top_plane.normalize();
-
-    Vector3 res;
-    near_plane.intersect_3(right_plane, top_plane, &res);
-
-    return Vector2(res.x, res.y);
-}
-
-bool CameraMatrix::get_endpoints(
-    const Transform& p_transform,
-    Vector3* p_8points
-) const {
-    std::vector<Plane> planes        = get_projection_planes(Transform());
-    const Planes intersections[8][3] = {
-        {PLANE_FAR,  PLANE_LEFT,  PLANE_TOP   },
-        {PLANE_FAR,  PLANE_LEFT,  PLANE_BOTTOM},
-        {PLANE_FAR,  PLANE_RIGHT, PLANE_TOP   },
-        {PLANE_FAR,  PLANE_RIGHT, PLANE_BOTTOM},
-        {PLANE_NEAR, PLANE_LEFT,  PLANE_TOP   },
-        {PLANE_NEAR, PLANE_LEFT,  PLANE_BOTTOM},
-        {PLANE_NEAR, PLANE_RIGHT, PLANE_TOP   },
-        {PLANE_NEAR, PLANE_RIGHT, PLANE_BOTTOM},
-    };
-
-    for (int i = 0; i < 8; i++) {
-        Vector3 point;
-        bool res = planes[intersections[i][0]].intersect_3(
-            planes[intersections[i][1]],
-            planes[intersections[i][2]],
-            &point
-        );
-        ERR_FAIL_COND_V(!res, false);
-        p_8points[i] = p_transform.xform(point);
+        // Replace pivot by reciprocal.
+        matrix[k][k] = 1.f / pivot_value;
     }
 
-    return true;
-}
-
-std::vector<Plane> CameraMatrix::get_projection_planes(
-    const Transform& p_transform
-) const {
-    /** Fast Plane Extraction from combined modelview/projection matrices.
-     * References:
-     * https://web.archive.org/web/20011221205252/http://www.markmorley.com/opengl/frustumculling.html
-     * https://web.archive.org/web/20061020020112/http://www2.ravensoft.com/users/ggribb/plane%20extraction.pdf
-     */
-
-    std::vector<Plane> planes;
-
-    const real_t* matrix = (const real_t*)this->matrix;
-
-    Plane new_plane;
-
-    ///////--- Near Plane ---///////
-    new_plane = Plane(
-        matrix[3] + matrix[2],
-        matrix[7] + matrix[6],
-        matrix[11] + matrix[10],
-        matrix[15] + matrix[14]
-    );
-
-    new_plane.normal = -new_plane.normal;
-    new_plane.normalize();
-
-    planes.push_back(p_transform.xform(new_plane));
-
-    ///////--- Far Plane ---///////
-    new_plane = Plane(
-        matrix[3] - matrix[2],
-        matrix[7] - matrix[6],
-        matrix[11] - matrix[10],
-        matrix[15] - matrix[14]
-    );
-
-    new_plane.normal = -new_plane.normal;
-    new_plane.normalize();
-
-    planes.push_back(p_transform.xform(new_plane));
-
-    ///////--- Left Plane ---///////
-    new_plane = Plane(
-        matrix[3] + matrix[0],
-        matrix[7] + matrix[4],
-        matrix[11] + matrix[8],
-        matrix[15] + matrix[12]
-    );
-
-    new_plane.normal = -new_plane.normal;
-    new_plane.normalize();
-
-    planes.push_back(p_transform.xform(new_plane));
-
-    ///////--- Top Plane ---///////
-    new_plane = Plane(
-        matrix[3] - matrix[1],
-        matrix[7] - matrix[5],
-        matrix[11] - matrix[9],
-        matrix[15] - matrix[13]
-    );
-
-    new_plane.normal = -new_plane.normal;
-    new_plane.normalize();
-
-    planes.push_back(p_transform.xform(new_plane));
-
-    ///////--- Right Plane ---///////
-    new_plane = Plane(
-        matrix[3] - matrix[0],
-        matrix[7] - matrix[4],
-        matrix[11] - matrix[8],
-        matrix[15] - matrix[12]
-    );
-
-    new_plane.normal = -new_plane.normal;
-    new_plane.normalize();
-
-    planes.push_back(p_transform.xform(new_plane));
-
-    ///////--- Bottom Plane ---///////
-    new_plane = Plane(
-        matrix[3] + matrix[1],
-        matrix[7] + matrix[5],
-        matrix[11] + matrix[9],
-        matrix[15] + matrix[13]
-    );
-
-    new_plane.normal = -new_plane.normal;
-    new_plane.normalize();
-
-    planes.push_back(p_transform.xform(new_plane));
-
-    return planes;
+    // Final interchange of rows and columns.
+    // Ignore 1 by 1 corner.
+    for (int k = 4 - 2; k >= 0; k--) {
+        const int row = pivot_j[k];
+        if (row != k) {
+            for (int j = 0; j < 4; j++) {
+                const real_t temp = matrix[k][j];
+                matrix[k][j]      = -matrix[row][j];
+                matrix[row][j]    = temp;
+            }
+        }
+        const int col = pivot_i[k];
+        if (col != k) {
+            for (int i = 0; i < 4; i++) {
+                const real_t temp = matrix[i][k];
+                matrix[i][k]      = -matrix[i][col];
+                matrix[i][col]    = temp;
+            }
+        }
+    }
 }
 
 CameraMatrix CameraMatrix::inverse() const {
@@ -469,233 +572,43 @@ CameraMatrix CameraMatrix::inverse() const {
     return cm;
 }
 
-void CameraMatrix::invert() {
-    int i, j, k;
-    int pvt_i[4], pvt_j[4]; /* Locations of pivot matrix */
-    real_t pvt_val;         /* Value of current pivot element */
-    real_t hold;            /* Temporary storage */
-    real_t determinat;      /* Determinant */
-
-    determinat = 1.0;
-    for (k = 0; k < 4; k++) {
-        /** Locate k'th pivot element **/
-        pvt_val  = matrix[k][k]; /** Initialize for search **/
-        pvt_i[k] = k;
-        pvt_j[k] = k;
-        for (i = k; i < 4; i++) {
-            for (j = k; j < 4; j++) {
-                if (absd(matrix[i][j]) > absd(pvt_val)) {
-                    pvt_i[k] = i;
-                    pvt_j[k] = j;
-                    pvt_val  = matrix[i][j];
-                }
-            }
-        }
-
-        /** Product of pivots, gives determinant when finished **/
-        determinat *= pvt_val;
-        if (absd(determinat) < 1e-7) {
-            return; //(false);  /** Matrix is singular (zero determinant). **/
-        }
-
-        /** "Interchange" rows (with sign change stuff) **/
-        i = pvt_i[k];
-        if (i != k) { /** If rows are different **/
-            for (j = 0; j < 4; j++) {
-                hold         = -matrix[k][j];
-                matrix[k][j] = matrix[i][j];
-                matrix[i][j] = hold;
-            }
-        }
-
-        /** "Interchange" columns **/
-        j = pvt_j[k];
-        if (j != k) { /** If columns are different **/
-            for (i = 0; i < 4; i++) {
-                hold         = -matrix[i][k];
-                matrix[i][k] = matrix[i][j];
-                matrix[i][j] = hold;
-            }
-        }
-
-        /** Divide column by minus pivot value **/
-        for (i = 0; i < 4; i++) {
-            if (i != k) {
-                matrix[i][k] /= (-pvt_val);
-            }
-        }
-
-        /** Reduce the matrix **/
-        for (i = 0; i < 4; i++) {
-            hold = matrix[i][k];
-            for (j = 0; j < 4; j++) {
-                if (i != k && j != k) {
-                    matrix[i][j] += hold * matrix[k][j];
-                }
-            }
-        }
-
-        /** Divide row by pivot **/
-        for (j = 0; j < 4; j++) {
-            if (j != k) {
-                matrix[k][j] /= pvt_val;
-            }
-        }
-
-        /** Replace pivot by reciprocal (at last we can touch it). **/
-        matrix[k][k] = 1.0 / pvt_val;
-    }
-
-    /* That was most of the work, one final pass of row/column interchange */
-    /* to finish */
-    for (k = 4 - 2; k >= 0; k--) { /* Don't need to work with 1 by 1 corner*/
-        i = pvt_j[k];              /* Rows to swap correspond to pivot COLUMN */
-        if (i != k) {              /* If rows are different */
-            for (j = 0; j < 4; j++) {
-                hold         = matrix[k][j];
-                matrix[k][j] = -matrix[i][j];
-                matrix[i][j] = hold;
-            }
-        }
-
-        j = pvt_i[k]; /* Columns to swap correspond to pivot ROW */
-        if (j != k) { /* If columns are different */
-            for (i = 0; i < 4; i++) {
-                hold         = matrix[i][k];
-                matrix[i][k] = -matrix[i][j];
-                matrix[i][j] = hold;
-            }
-        }
-    }
+Vector3 CameraMatrix::xform(const Vector3& vector) const {
+    Vector3 ret;
+    ret.x = matrix[0][0] * vector.x + matrix[1][0] * vector.y
+          + matrix[2][0] * vector.z + matrix[3][0];
+    ret.y = matrix[0][1] * vector.x + matrix[1][1] * vector.y
+          + matrix[2][1] * vector.z + matrix[3][1];
+    ret.z = matrix[0][2] * vector.x + matrix[1][2] * vector.y
+          + matrix[2][2] * vector.z + matrix[3][2];
+    const real_t w = matrix[0][3] * vector.x + matrix[1][3] * vector.y
+                   + matrix[2][3] * vector.z + matrix[3][3];
+    return ret / w;
 }
 
-CameraMatrix::CameraMatrix() {
+Plane CameraMatrix::xform4(const Plane& plane) const {
+    Plane ret;
+
+    ret.normal.x = matrix[0][0] * plane.normal.x + matrix[1][0] * plane.normal.y
+                 + matrix[2][0] * plane.normal.z + matrix[3][0] * plane.d;
+    ret.normal.y = matrix[0][1] * plane.normal.x + matrix[1][1] * plane.normal.y
+                 + matrix[2][1] * plane.normal.z + matrix[3][1] * plane.d;
+    ret.normal.z = matrix[0][2] * plane.normal.x + matrix[1][2] * plane.normal.y
+                 + matrix[2][2] * plane.normal.z + matrix[3][2] * plane.d;
+    ret.d = matrix[0][3] * plane.normal.x + matrix[1][3] * plane.normal.y
+          + matrix[2][3] * plane.normal.z + matrix[3][3] * plane.d;
+    return ret;
+}
+
+void CameraMatrix::make_scale(const Vector3& scale) {
     set_identity();
+    matrix[0][0] = scale.x;
+    matrix[1][1] = scale.y;
+    matrix[2][2] = scale.z;
 }
 
-CameraMatrix CameraMatrix::operator*(const CameraMatrix& p_matrix) const {
-    CameraMatrix new_matrix;
-
-    for (int j = 0; j < 4; j++) {
-        for (int i = 0; i < 4; i++) {
-            real_t ab = 0;
-            for (int k = 0; k < 4; k++) {
-                ab += matrix[k][i] * p_matrix.matrix[j][k];
-            }
-            new_matrix.matrix[j][i] = ab;
-        }
-    }
-
-    return new_matrix;
-}
-
-void CameraMatrix::set_light_bias() {
-    real_t* m = &matrix[0][0];
-
-    m[0]  = 0.5;
-    m[1]  = 0.0;
-    m[2]  = 0.0;
-    m[3]  = 0.0;
-    m[4]  = 0.0;
-    m[5]  = 0.5;
-    m[6]  = 0.0;
-    m[7]  = 0.0;
-    m[8]  = 0.0;
-    m[9]  = 0.0;
-    m[10] = 0.5;
-    m[11] = 0.0;
-    m[12] = 0.5;
-    m[13] = 0.5;
-    m[14] = 0.5;
-    m[15] = 1.0;
-}
-
-void CameraMatrix::set_light_atlas_rect(const Rect2& p_rect) {
-    real_t* m = &matrix[0][0];
-
-    m[0]  = p_rect.size.width;
-    m[1]  = 0.0;
-    m[2]  = 0.0;
-    m[3]  = 0.0;
-    m[4]  = 0.0;
-    m[5]  = p_rect.size.height;
-    m[6]  = 0.0;
-    m[7]  = 0.0;
-    m[8]  = 0.0;
-    m[9]  = 0.0;
-    m[10] = 1.0;
-    m[11] = 0.0;
-    m[12] = p_rect.position.x;
-    m[13] = p_rect.position.y;
-    m[14] = 0.0;
-    m[15] = 1.0;
-}
-
-CameraMatrix::operator String() const {
-    String str;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            str += String((j > 0) ? ", " : "\n") + String::num(matrix[i][j]);
-        }
-    }
-
-    return str;
-}
-
-real_t CameraMatrix::get_aspect() const {
-    Vector2 vp_he = get_viewport_half_extents();
-    return vp_he.x / vp_he.y;
-}
-
-int CameraMatrix::get_pixels_per_meter(int p_for_pixel_width) const {
-    Vector3 result = xform(Vector3(1, 0, -1));
-
-    return int((result.x * 0.5 + 0.5) * p_for_pixel_width);
-}
-
-bool CameraMatrix::is_orthogonal() const {
-    return matrix[3][3] == 1.0;
-}
-
-real_t CameraMatrix::get_fov() const {
-    const real_t* matrix = (const real_t*)this->matrix;
-
-    Plane right_plane = Plane(
-        matrix[3] - matrix[0],
-        matrix[7] - matrix[4],
-        matrix[11] - matrix[8],
-        -matrix[15] + matrix[12]
-    );
-    right_plane.normalize();
-
-    if ((matrix[8] == 0) && (matrix[9] == 0)) {
-        return Math::rad2deg(acos(std::abs(right_plane.normal.x))) * 2.0;
-    } else {
-        // our frustum is asymmetrical need to calculate the left planes angle
-        // separately..
-        Plane left_plane = Plane(
-            matrix[3] + matrix[0],
-            matrix[7] + matrix[4],
-            matrix[11] + matrix[8],
-            matrix[15] + matrix[12]
-        );
-        left_plane.normalize();
-
-        return Math::rad2deg(acos(std::abs(left_plane.normal.x)))
-             + Math::rad2deg(acos(std::abs(right_plane.normal.x)));
-    }
-}
-
-void CameraMatrix::make_scale(const Vector3& p_scale) {
-    set_identity();
-    matrix[0][0] = p_scale.x;
-    matrix[1][1] = p_scale.y;
-    matrix[2][2] = p_scale.z;
-}
-
-void CameraMatrix::scale_translate_to_fit(const AABB& p_aabb) {
-    Vector3 min = p_aabb.position;
-    Vector3 max = p_aabb.position + p_aabb.size;
+void CameraMatrix::scale_translate_to_fit(const AABB& aabb) {
+    const Vector3 min = aabb.position;
+    const Vector3 max = aabb.position + aabb.size;
 
     matrix[0][0] = 2 / (max.x - min.x);
     matrix[1][0] = 0;
@@ -718,50 +631,75 @@ void CameraMatrix::scale_translate_to_fit(const AABB& p_aabb) {
     matrix[3][3] = 1;
 }
 
-CameraMatrix::operator Transform() const {
-    Transform tr;
-    const real_t* m = &matrix[0][0];
-
-    tr.basis.elements[0][0] = m[0];
-    tr.basis.elements[1][0] = m[1];
-    tr.basis.elements[2][0] = m[2];
-
-    tr.basis.elements[0][1] = m[4];
-    tr.basis.elements[1][1] = m[5];
-    tr.basis.elements[2][1] = m[6];
-
-    tr.basis.elements[0][2] = m[8];
-    tr.basis.elements[1][2] = m[9];
-    tr.basis.elements[2][2] = m[10];
-
-    tr.origin.x = m[12];
-    tr.origin.y = m[13];
-    tr.origin.z = m[14];
-
-    return tr;
+// Fast Plane Extraction from combined modelview/projection matrices.
+// References:
+// https://web.archive.org/web/20011221205252/http://www.markmorley.com/opengl/frustumculling.html
+// https://web.archive.org/web/20061020020112/http://www2.ravensoft.com/users/ggribb/plane%20extraction.pdf
+Plane CameraMatrix::get_far_plane() const {
+    return {
+        matrix[0][3] - matrix[0][2],
+        matrix[1][3] - matrix[1][2],
+        matrix[2][3] - matrix[2][2],
+        matrix[3][3] - matrix[3][2]
+    };
 }
 
-CameraMatrix::CameraMatrix(const Transform& p_transform) {
-    const Transform& tr = p_transform;
-    real_t* m           = &matrix[0][0];
-
-    m[0]  = tr.basis.elements[0][0];
-    m[1]  = tr.basis.elements[1][0];
-    m[2]  = tr.basis.elements[2][0];
-    m[3]  = 0.0;
-    m[4]  = tr.basis.elements[0][1];
-    m[5]  = tr.basis.elements[1][1];
-    m[6]  = tr.basis.elements[2][1];
-    m[7]  = 0.0;
-    m[8]  = tr.basis.elements[0][2];
-    m[9]  = tr.basis.elements[1][2];
-    m[10] = tr.basis.elements[2][2];
-    m[11] = 0.0;
-    m[12] = tr.origin.x;
-    m[13] = tr.origin.y;
-    m[14] = tr.origin.z;
-    m[15] = 1.0;
+Plane CameraMatrix::get_near_plane() const {
+    return {
+        matrix[0][3] + matrix[0][2],
+        matrix[1][3] + matrix[1][2],
+        matrix[2][3] + matrix[2][2],
+        matrix[3][3] + matrix[3][2]
+    };
 }
 
-CameraMatrix::~CameraMatrix() {}
+Plane CameraMatrix::get_left_plane() const {
+    return {
+        matrix[0][3] + matrix[0][0],
+        matrix[1][3] + matrix[1][0],
+        matrix[2][3] + matrix[2][0],
+        matrix[3][3] + matrix[3][0]
+    };
+}
+
+Plane CameraMatrix::get_right_plane() const {
+    return {
+        matrix[0][3] - matrix[0][0],
+        matrix[1][3] - matrix[1][0],
+        matrix[2][3] - matrix[2][0],
+        matrix[3][3] - matrix[3][0]
+    };
+}
+
+Plane CameraMatrix::get_top_plane() const {
+    return {
+        matrix[0][3] - matrix[0][1],
+        matrix[1][3] - matrix[1][1],
+        matrix[2][3] - matrix[2][1],
+        matrix[3][3] - matrix[3][1]
+    };
+}
+
+Plane CameraMatrix::get_bottom_plane() const {
+    return {
+        matrix[0][3] + matrix[0][1],
+        matrix[1][3] + matrix[1][1],
+        matrix[2][3] + matrix[2][1],
+        matrix[3][3] + matrix[3][1]
+    };
+}
+
+CameraMatrix operator*(const CameraMatrix& left, const CameraMatrix& right) {
+    CameraMatrix result;
+    for (int j = 0; j < 4; j++) {
+        for (int i = 0; i < 4; i++) {
+            real_t ab = 0;
+            for (int k = 0; k < 4; k++) {
+                ab += left.matrix[k][i] * right.matrix[j][k];
+            }
+            result.matrix[j][i] = ab;
+        }
+    }
+    return result;
+}
 } // namespace Rebel
