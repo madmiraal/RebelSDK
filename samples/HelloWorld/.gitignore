@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2025 Rebel SDK contributors
+#
+# SPDX-License-Identifier: MIT
+
+# Simple Project .gitignore
+
+.import/
+builds/
+
+#export_presets.cfg

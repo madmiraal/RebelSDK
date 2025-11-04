@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 Rebel SDK contributors
+#
+# SPDX-License-Identifier: MIT
+
+environment = Environment()
+
+# Include directories
+environment.Append(
+    CPPPATH=[
+        "include",
+    ]
+)
+
+# Source files
+sources = [
+    "helloworld.c",
+]
+
+# Build library
+environment.SharedLibrary(target="builds/helloworld", source=sources)

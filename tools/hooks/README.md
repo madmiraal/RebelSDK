@@ -1,7 +1,7 @@
-# Git hooks for Godot Engine
+# Git hooks for Rebel SDK
 
-This folder contains git hooks meant to be installed locally by Godot Engine
-contributors to make sure they comply with our requirements.
+This folder contains git hooks meant to be installed locally by Rebel SDK
+contributors to make sure they comply with file formatting standards.
 
 ## List of hooks
 

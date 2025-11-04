@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 Rebel SDK contributors
+#
+# SPDX-License-Identifier: MIT
+
+# Simple Library .gitignore
+
+# Build generated
+builds/
+*.o
+*.obj
+
+# SCons generated
+.sconf_temp/
+.sconsign.dblite

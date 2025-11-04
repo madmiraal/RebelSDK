@@ -1,128 +1,235 @@
-# Commented out parameters are those with the same value as base LLVM style
-# We can uncomment them if we want to change their value, or enforce the
-# chosen value in case the base style changes (last sync: Clang 6.0.1).
----
-### General config, applies to all languages ###
-BasedOnStyle:  LLVM
+# Commented out parameters are those with the same value as base LLVM style.
+# Uncomment parameters to change their value, or
+# enforce the chosen value in case the base version style changes.
+# Current base version: 17
+
+# Language: Cpp
+# BasedOnStyle: LLVM
 AccessModifierOffset: -4
-AlignAfterOpenBracket: DontAlign
-# AlignConsecutiveAssignments: false
-# AlignConsecutiveDeclarations: false
+AlignAfterOpenBracket: BlockIndent
+AlignArrayOfStructures: Left
+AlignConsecutiveAssignments:
+    Enabled:          true
+#   AcrossEmptyLines: false
+    AcrossComments:   true
+    AlignCompound:    true
+#   PadOperators:     true
+AlignConsecutiveBitFields:
+    Enabled:          true
+#   AcrossEmptyLines: false
+    AcrossComments:   true
+    AlignCompound:    true
+    PadOperators:     true
+# AlignConsecutiveDeclarations:
+#   Enabled:          false
+#   AcrossEmptyLines: false
+#   AcrossComments:   false
+#   AlignCompound:    false
+#   PadOperators:     false
+AlignConsecutiveMacros:
+    Enabled:          true
+#   AcrossEmptyLines: false
+    AcrossComments:   true
+    AlignCompound:    true
+    PadOperators:     true
+# AlignConsecutiveShortCaseStatements:
+#   Enabled:          false
+#   AcrossEmptyLines: false
+#   AcrossComments:   false
+#   AlignCaseColons:  false
 # AlignEscapedNewlines: Right
-# AlignOperands:   true
-AlignTrailingComments: false
+AlignOperands: AlignAfterOperator
+# AlignTrailingComments:
+#   Kind:           Always
+#   OverEmptyLines: 0
+AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
-# AllowShortBlocksOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
 # AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Inline
-# AllowShortIfStatementsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLambdasOnASingleLine: Empty
 # AllowShortLoopsOnASingleLine: false
 # AlwaysBreakAfterDefinitionReturnType: None
 # AlwaysBreakAfterReturnType: None
-# AlwaysBreakBeforeMultilineStrings: false
-# AlwaysBreakTemplateDeclarations: false
-# BinPackArguments: true
-# BinPackParameters: true
-# BraceWrapping:
-#   AfterClass:      false
-#   AfterControlStatement: false
-#   AfterEnum:       false
-#   AfterFunction:   false
-#   AfterNamespace:  false
-#   AfterObjCDeclaration: false
-#   AfterStruct:     false
-#   AfterUnion:      false
-#   AfterExternBlock: false
-#   BeforeCatch:     false
-#   BeforeElse:      false
-#   IndentBraces:    false
-#   SplitEmptyFunction: true
-#   SplitEmptyRecord: true
-#   SplitEmptyNamespace: true
-# BreakBeforeBinaryOperators: None
-# BreakBeforeBraces: Attach
-# BreakBeforeInheritanceComma: false
-BreakBeforeTernaryOperators: false
-# BreakConstructorInitializersBeforeComma: false
+AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakTemplateDeclarations: Yes
+# AttributeMacros:
+BinPackArguments: false
+BinPackParameters: false
+# BitFieldColonSpacing: Both
+BraceWrapping:
+#   AfterCaseLabel:        false
+#   AfterClass:            false
+#   AfterControlStatement: Never
+#   AfterEnum:             false
+#   AfterExternBlock:      false
+#   AfterFunction:         false
+#   AfterNamespace:        false
+#   AfterObjCDeclaration:  false
+#   AfterStruct:           false
+#   AfterUnion:            false
+#   BeforeCatch:           false
+#   BeforeElse:            false
+#   BeforeLambdaBody:      false
+#   BeforeWhile:           false
+#   IndentBraces:          false
+    SplitEmptyFunction:    false
+    SplitEmptyRecord:      false
+#   SplitEmptyNamespace:   true
+BreakAfterAttributes: Always
+BreakAfterJavaFieldAnnotations: true
+BreakArrays: false
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Custom
+# BreakBeforeConceptDeclarations: Always
+# BreakBeforeInlineASMColon: OnlyMultiline
+# BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
 # BreakStringLiterals: true
-ColumnLimit:     0
-# CommentPragmas:  '^ IWYU pragma:'
+# ColumnLimit: 80
+CommentPragmas: ''
 # CompactNamespaces: false
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
-ConstructorInitializerIndentWidth: 8
-ContinuationIndentWidth: 8
-Cpp11BracedListStyle: false
+# ConstructorInitializerIndentWidth: 4
+# ContinuationIndentWidth: 4
+# Cpp11BracedListStyle: true
 # DerivePointerAlignment: false
-# DisableFormat:   false
+# DisableFormat: false
+# EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Always
 # ExperimentalAutoDetectBinPacking: false
 # FixNamespaceComments: true
 # ForEachMacros:
 #   - foreach
 #   - Q_FOREACH
 #   - BOOST_FOREACH
-# IncludeBlocks:   Preserve
+# IfMacros:
+#   - KJ_IF_MAYBE
+IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex:           '".*"'
-    Priority:        1
-  - Regex:           '^<.*\.h>'
-    Priority:        2
-  - Regex:           '^<.*'
-    Priority:        3
-# IncludeIsMainRegex: '(Test)?$'
+  - Regex:         '".*"'
+    Priority:      1
+#   SortPriority:  0
+#   CaseSensitive: false
+  - Regex:         '^<.*'
+    Priority:      2
+#   SortPriority:  0
+#   CaseSensitive: false
+IncludeIsMainRegex: '$'
+# IncludeIsMainSourceRegex: ''
+# IndentAccessModifiers: false
+# IndentCaseBlocks: false
 IndentCaseLabels: true
+# IndentExternBlock: AfterExternBlock
+# IndentGotoLabels: true
 # IndentPPDirectives: None
-IndentWidth:     4
+# IndentRequiresClause: true
+IndentWidth: 4
 # IndentWrappedFunctionNames: false
-# JavaScriptQuotes: Leave
+InsertBraces: true
+InsertNewlineAtEOF: true
+InsertTrailingCommas: Wrapped
+# IntegerLiteralSeparator:
+#   Binary:           0
+#   BinaryMinDigits:  0
+#   Decimal:          0
+#   DecimalMinDigits: 0
+#   Hex:              0
+#   HexMinDigits:     0
+JavaImportGroups: ['com.rebeltoolbox', 'android', 'androidx', 'com.android', 'com.google', 'java', 'javax']
+JavaScriptQuotes: Single
 # JavaScriptWrapImports: true
+# KeepEmptyLinesAtEOF: false
 KeepEmptyLinesAtTheStartOfBlocks: false
+# LambdaBodyIndentation: Signature
+# LineEnding: DeriveLF
 # MacroBlockBegin: ''
 # MacroBlockEnd:   ''
+# Macros:
 # MaxEmptyLinesToKeep: 1
 # NamespaceIndentation: None
-# PenaltyBreakAssignment: 2
-# PenaltyBreakBeforeFirstCallParameter: 19
-# PenaltyBreakComment: 300
-# PenaltyBreakFirstLessLess: 120
-# PenaltyBreakString: 1000
-# PenaltyExcessCharacter: 1000000
-# PenaltyReturnTypeOnItsOwnLine: 60
-# PointerAlignment: Right
-# RawStringFormats:
-#   - Delimiter:       pb
-#     Language:        TextProto
-#     BasedOnStyle:    google
-# ReflowComments:  true
-# SortIncludes:    true
-# SortUsingDeclarations: true
-# SpaceAfterCStyleCast: false
-# SpaceAfterTemplateKeyword: true
-# SpaceBeforeAssignmentOperators: true
-# SpaceBeforeParens: ControlStatements
-# SpaceInEmptyParentheses: false
-# SpacesBeforeTrailingComments: 1
-# SpacesInAngles:  false
-# SpacesInContainerLiterals: true
-# SpacesInCStyleCastParentheses: false
-# SpacesInParentheses: false
-# SpacesInSquareBrackets: false
-TabWidth:        4
-UseTab:          Always
----
-### C++ specific config ###
-Language:        Cpp
-Standard:        Cpp11
----
-### ObjC specific config ###
-Language:        ObjC
-Standard:        Cpp11
+# NamespaceMacros:
+# ObjCBinPackProtocolList: Auto
 ObjCBlockIndentWidth: 4
+# ObjCBreakBeforeNestedBlockParam: true
 # ObjCSpaceAfterProperty: false
 # ObjCSpaceBeforeProtocolList: true
----
-### Java specific config ###
-Language:        Java
-# BreakAfterJavaFieldAnnotations: false
-JavaImportGroups: ['org.godotengine', 'android', 'androidx', 'com.android', 'com.google', 'java', 'javax']
-...
+PackConstructorInitializers: CurrentLine
+# PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 0
+# PenaltyBreakComment: 300
+# PenaltyBreakFirstLessLess: 120
+# PenaltyBreakOpenParenthesis: 0
+# PenaltyBreakString: 1000
+# PenaltyBreakTemplateDeclaration: 10
+# PenaltyExcessCharacter: 1000000
+# PenaltyIndentedWhitespace: 0
+PenaltyReturnTypeOnItsOwnLine: 1000
+PointerAlignment: Left
+# PPIndentWidth: -1
+# QualifierAlignment: Leave
+# QualifierOrder:
+# RawStringFormats:
+# ReferenceAlignment: Pointer
+# ReflowComments: true
+# RemoveBracesLLVM: false
+# RemoveParentheses: Leave
+# RemoveSemicolon: false
+# RequiresClausePosition: OwnLine
+# RequiresExpressionIndentation: OuterScope
+SeparateDefinitionBlocks: Always
+ShortNamespaceLines: 0
+# SortIncludes: CaseSensitive
+# SortJavaStaticImport: Before
+SortUsingDeclarations: Lexicographic
+# SpaceAfterCStyleCast: false
+# SpaceAfterLogicalNot: false
+# SpaceAfterTemplateKeyword: true
+# SpaceAroundPointerQualifiers: Default
+# SpaceBeforeAssignmentOperators: true
+# SpaceBeforeCaseColon: false
+# SpaceBeforeCpp11BracedList: false
+# SpaceBeforeCtorInitializerColon: true
+# SpaceBeforeInheritanceColon: true
+# SpaceBeforeJsonColon: false
+# SpaceBeforeParens: ControlStatements
+# SpaceBeforeParensOptions:
+#   AfterControlStatements:       true
+#   AfterForeachMacros:           true
+#   AfterFunctionDefinitionName:  false
+#   AfterFunctionDeclarationName: false
+#   AfterIfMacros:                true
+#   AfterOverloadedOperator:      false
+#   AfterRequiresInClause:        false
+#   AfterRequiresInExpression:    false
+#   BeforeNonEmptyParentheses:    false
+# SpaceBeforeRangeBasedForLoopColon: true
+# SpaceBeforeSquareBrackets: false
+# SpaceInEmptyBlock: false
+# SpacesBeforeTrailingComments: 1
+# SpacesInAngles: Never
+# SpacesInContainerLiterals: true
+SpacesInLineCommentPrefix:
+#   Minimum: 1
+    Maximum: 1
+# SpacesInParens:  Never
+# SpacesInParensOptions:
+#   InConditionalStatements: false
+#   InCStyleCasts:           false
+#   InEmptyParentheses:      false
+#   Other:                   false
+# SpacesInSquareBrackets: false
+Standard: c++14
+# StatementAttributeLikeMacros:
+#   - Q_EMIT
+# StatementMacros:
+#   - Q_UNUSED
+#   - QT_REQUIRE_VERSION
+TabWidth: 4
+# TypeNames:
+# TypenameMacros:
+# UseTab: Never
+# VerilogBreakBetweenInstancePorts: true
+# WhitespaceSensitiveMacros:

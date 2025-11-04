@@ -1,0 +1,479 @@
+// SPDX-FileCopyrightText: 2025 Rebel SDK contributors
+//
+// SPDX-License-Identifier: MIT
+
+#include "classes/physicsdirectbodystate.h"
+
+#include "classes/icalls.h"
+#include "classes/object.h"
+#include "classes/physicsdirectspacestate.h"
+#include "common/rebel.h"
+#include "common/rebelglobal.h"
+
+namespace Rebel {
+void PhysicsDirectBodyState::add_central_force(const Vector3 force) {
+    rebel_icall_void_vector3(
+        method_bindings.mb_add_central_force,
+        (const Object*)this,
+        force
+    );
+}
+
+void PhysicsDirectBodyState::add_force(const Vector3 force, const Vector3 position) {
+    rebel_icall_void_vector3_vector3(
+        method_bindings.mb_add_force,
+        (const Object*)this,
+        force,
+        position
+    );
+}
+
+void PhysicsDirectBodyState::add_torque(const Vector3 torque) {
+    rebel_icall_void_vector3(
+        method_bindings.mb_add_torque,
+        (const Object*)this,
+        torque
+    );
+}
+
+void PhysicsDirectBodyState::apply_central_impulse(const Vector3 j) {
+    rebel_icall_void_vector3(
+        method_bindings.mb_apply_central_impulse,
+        (const Object*)this,
+        j
+    );
+}
+
+void PhysicsDirectBodyState::apply_impulse(const Vector3 position, const Vector3 j) {
+    rebel_icall_void_vector3_vector3(
+        method_bindings.mb_apply_impulse,
+        (const Object*)this,
+        position,
+        j
+    );
+}
+
+void PhysicsDirectBodyState::apply_torque_impulse(const Vector3 j) {
+    rebel_icall_void_vector3(
+        method_bindings.mb_apply_torque_impulse,
+        (const Object*)this,
+        j
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_angular_velocity() const {
+    return rebel_icall_vector3(
+        method_bindings.mb_get_angular_velocity,
+        (const Object*)this
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_center_of_mass() const {
+    return rebel_icall_vector3(
+        method_bindings.mb_get_center_of_mass,
+        (const Object*)this
+    );
+}
+
+RID PhysicsDirectBodyState::get_contact_collider(const int64_t contact_idx) const {
+    return rebel_icall_rid_int(
+        method_bindings.mb_get_contact_collider,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+int64_t PhysicsDirectBodyState::get_contact_collider_id(const int64_t contact_idx) const {
+    return rebel_icall_int_int(
+        method_bindings.mb_get_contact_collider_id,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+Object* PhysicsDirectBodyState::get_contact_collider_object(const int64_t contact_idx) const {
+    return (Object*)rebel_icall_object_int(
+        method_bindings.mb_get_contact_collider_object,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_contact_collider_position(const int64_t contact_idx) const {
+    return rebel_icall_vector3_int(
+        method_bindings.mb_get_contact_collider_position,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+int64_t PhysicsDirectBodyState::get_contact_collider_shape(const int64_t contact_idx) const {
+    return rebel_icall_int_int(
+        method_bindings.mb_get_contact_collider_shape,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_contact_collider_velocity_at_position(const int64_t contact_idx) const {
+    return rebel_icall_vector3_int(
+        method_bindings.mb_get_contact_collider_velocity_at_position,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+int64_t PhysicsDirectBodyState::get_contact_count() const {
+    return rebel_icall_int(
+        method_bindings.mb_get_contact_count,
+        (const Object*)this
+    );
+}
+
+real_t PhysicsDirectBodyState::get_contact_impulse(const int64_t contact_idx) const {
+    return rebel_icall_float_int(
+        method_bindings.mb_get_contact_impulse,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_contact_local_normal(const int64_t contact_idx) const {
+    return rebel_icall_vector3_int(
+        method_bindings.mb_get_contact_local_normal,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_contact_local_position(const int64_t contact_idx) const {
+    return rebel_icall_vector3_int(
+        method_bindings.mb_get_contact_local_position,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+int64_t PhysicsDirectBodyState::get_contact_local_shape(const int64_t contact_idx) const {
+    return rebel_icall_int_int(
+        method_bindings.mb_get_contact_local_shape,
+        (const Object*)this,
+        contact_idx
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_inverse_inertia() const {
+    return rebel_icall_vector3(
+        method_bindings.mb_get_inverse_inertia,
+        (const Object*)this
+    );
+}
+
+real_t PhysicsDirectBodyState::get_inverse_mass() const {
+    return rebel_icall_float(
+        method_bindings.mb_get_inverse_mass,
+        (const Object*)this
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_linear_velocity() const {
+    return rebel_icall_vector3(
+        method_bindings.mb_get_linear_velocity,
+        (const Object*)this
+    );
+}
+
+Basis PhysicsDirectBodyState::get_principal_inertia_axes() const {
+    return rebel_icall_basis(
+        method_bindings.mb_get_principal_inertia_axes,
+        (const Object*)this
+    );
+}
+
+PhysicsDirectSpaceState* PhysicsDirectBodyState::get_space_state() {
+    return (PhysicsDirectSpaceState*)rebel_icall_object(
+        method_bindings.mb_get_space_state,
+        (const Object*)this
+    );
+}
+
+real_t PhysicsDirectBodyState::get_step() const {
+    return rebel_icall_float(
+        method_bindings.mb_get_step,
+        (const Object*)this
+    );
+}
+
+real_t PhysicsDirectBodyState::get_total_angular_damp() const {
+    return rebel_icall_float(
+        method_bindings.mb_get_total_angular_damp,
+        (const Object*)this
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_total_gravity() const {
+    return rebel_icall_vector3(
+        method_bindings.mb_get_total_gravity,
+        (const Object*)this
+    );
+}
+
+real_t PhysicsDirectBodyState::get_total_linear_damp() const {
+    return rebel_icall_float(
+        method_bindings.mb_get_total_linear_damp,
+        (const Object*)this
+    );
+}
+
+Transform PhysicsDirectBodyState::get_transform() const {
+    return rebel_icall_transform(
+        method_bindings.mb_get_transform,
+        (const Object*)this
+    );
+}
+
+Vector3 PhysicsDirectBodyState::get_velocity_at_local_position(const Vector3 local_position) const {
+    return rebel_icall_vector3_vector3(
+        method_bindings.mb_get_velocity_at_local_position,
+        (const Object*)this,
+        local_position
+    );
+}
+
+void PhysicsDirectBodyState::integrate_forces() {
+    rebel_icall_void(
+        method_bindings.mb_integrate_forces,
+        (const Object*)this
+    );
+}
+
+bool PhysicsDirectBodyState::is_sleeping() const {
+    return rebel_icall_bool(
+        method_bindings.mb_is_sleeping,
+        (const Object*)this
+    );
+}
+
+void PhysicsDirectBodyState::set_angular_velocity(const Vector3 velocity) {
+    rebel_icall_void_vector3(
+        method_bindings.mb_set_angular_velocity,
+        (const Object*)this,
+        velocity
+    );
+}
+
+void PhysicsDirectBodyState::set_linear_velocity(const Vector3 velocity) {
+    rebel_icall_void_vector3(
+        method_bindings.mb_set_linear_velocity,
+        (const Object*)this,
+        velocity
+    );
+}
+
+void PhysicsDirectBodyState::set_sleep_state(const bool enabled) {
+    rebel_icall_void_bool(
+        method_bindings.mb_set_sleep_state,
+        (const Object*)this,
+        enabled
+    );
+}
+
+void PhysicsDirectBodyState::set_transform(const Transform transform) {
+    rebel_icall_void_transform(
+        method_bindings.mb_set_transform,
+        (const Object*)this,
+        transform
+    );
+}
+
+void PhysicsDirectBodyState::init_method_bindings() {
+    method_bindings.mb_add_central_force =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "add_central_force"
+        );
+    method_bindings.mb_add_force =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "add_force"
+        );
+    method_bindings.mb_add_torque =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "add_torque"
+        );
+    method_bindings.mb_apply_central_impulse =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "apply_central_impulse"
+        );
+    method_bindings.mb_apply_impulse =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "apply_impulse"
+        );
+    method_bindings.mb_apply_torque_impulse =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "apply_torque_impulse"
+        );
+    method_bindings.mb_get_angular_velocity =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_angular_velocity"
+        );
+    method_bindings.mb_get_center_of_mass =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_center_of_mass"
+        );
+    method_bindings.mb_get_contact_collider =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_collider"
+        );
+    method_bindings.mb_get_contact_collider_id =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_collider_id"
+        );
+    method_bindings.mb_get_contact_collider_object =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_collider_object"
+        );
+    method_bindings.mb_get_contact_collider_position =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_collider_position"
+        );
+    method_bindings.mb_get_contact_collider_shape =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_collider_shape"
+        );
+    method_bindings.mb_get_contact_collider_velocity_at_position =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_collider_velocity_at_position"
+        );
+    method_bindings.mb_get_contact_count =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_count"
+        );
+    method_bindings.mb_get_contact_impulse =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_impulse"
+        );
+    method_bindings.mb_get_contact_local_normal =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_local_normal"
+        );
+    method_bindings.mb_get_contact_local_position =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_local_position"
+        );
+    method_bindings.mb_get_contact_local_shape =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_contact_local_shape"
+        );
+    method_bindings.mb_get_inverse_inertia =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_inverse_inertia"
+        );
+    method_bindings.mb_get_inverse_mass =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_inverse_mass"
+        );
+    method_bindings.mb_get_linear_velocity =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_linear_velocity"
+        );
+    method_bindings.mb_get_principal_inertia_axes =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_principal_inertia_axes"
+        );
+    method_bindings.mb_get_space_state =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_space_state"
+        );
+    method_bindings.mb_get_step =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_step"
+        );
+    method_bindings.mb_get_total_angular_damp =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_total_angular_damp"
+        );
+    method_bindings.mb_get_total_gravity =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_total_gravity"
+        );
+    method_bindings.mb_get_total_linear_damp =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_total_linear_damp"
+        );
+    method_bindings.mb_get_transform =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_transform"
+        );
+    method_bindings.mb_get_velocity_at_local_position =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "get_velocity_at_local_position"
+        );
+    method_bindings.mb_integrate_forces =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "integrate_forces"
+        );
+    method_bindings.mb_is_sleeping =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "is_sleeping"
+        );
+    method_bindings.mb_set_angular_velocity =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "set_angular_velocity"
+        );
+    method_bindings.mb_set_linear_velocity =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "set_linear_velocity"
+        );
+    method_bindings.mb_set_sleep_state =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "set_sleep_state"
+        );
+    method_bindings.mb_set_transform =
+        api->rebel_method_bind_get_method(
+            "PhysicsDirectBodyState",
+            "set_transform"
+        );
+
+    rebel_string_name class_name;
+    api->rebel_string_name_new_data(&class_name, "PhysicsDirectBodyState");
+    class_tag = core_1_2_api->rebel_get_class_tag(&class_name);
+    api->rebel_string_name_destroy(&class_name);
+}
+
+PhysicsDirectBodyState::MethodBindings PhysicsDirectBodyState::method_bindings = {};
+void* PhysicsDirectBodyState::class_tag = nullptr;
+} // namespace Rebel

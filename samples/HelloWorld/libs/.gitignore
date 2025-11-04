@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 Rebel SDK contributors
+#
+# SPDX-License-Identifier: MIT
+
+# Hello World libs folder
+# We want to include all the generated libraries.
+
+!libhelloworld.so
