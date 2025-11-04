@@ -1,13 +1,35 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2025 Rebel SDK contributors
+# SPDX-FileCopyrightText: 2022 Rebel Engine contributors
+# SPDX-FileCopyrightText: 2019-2022 Godot Engine contributors
+#
+# SPDX-License-Identifier: MIT
 
-# This script runs clang-format and fixes copyright headers on all relevant files in the repo.
-# This is the primary script responsible for fixing style violations.
+# This script applies clang-format to all code files.
+# The `clang-format` rules are defined in `.clang-format` in the root directory.
+# The version of `clang-format` used affects the output generated.
+# To get consistent formatting, use the same clang-format version as the Github
+# workflow style tests: currently version 18.
+
+# Check for uncommitted changes.
+if [[ $(git diff) ]]; then
+    echo "You have uncommitted changes!"
+    echo "Please commit, stage or stash your changes and try again."
+    exit 1
+fi
+
+# Check if clang-format is installed.
+if ! command -v clang-format > /dev/null; then
+	echo "Error: 'clang-format' executable not found."
+    echo "Please install clang-format, and try again."
+	exit 1
+fi
 
 set -uo pipefail
+
+echo "Applying clang-format to all code files..."
 IFS=$'\n\t'
-
 FILE_EXTS=(".h" ".c" ".cpp")
-
 # Loops through all text files tracked by Git.
 git grep -zIl '' |
 while IFS= read -rd '' file; do
@@ -33,15 +55,15 @@ while IFS= read -rd '' file; do
     done
 done
 
-# If a diff has been created, notify the user and exit with an error.
+# Check if a diff has been created.
 if [[ $(git diff) ]]; then
     echo "Files in this commit do not comply with the clang-format style rules."
-    echo "The following differences were found between the code and the formatting rules:"
+    echo "The following changes need to be made:"
     echo
     git diff --color
     echo
-    echo "Please fix your commit(s)"
-    echo "::error::Files in this commit do not comply with the clang-format style rules." && exit 1
+    echo "Please fix your commit."
+    exit 1
 fi
 
 echo "Files in this commit comply with the clang-format style rules."

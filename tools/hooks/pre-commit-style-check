@@ -1,4 +1,12 @@
 #!/bin/sh
+# SPDX-FileCopyrightText: 2025 Rebel SDK contributors
+# SPDX-FileCopyrightText: 2022 Rebel Engine contributors
+# SPDX-FileCopyrightText: 2017-2022 Godot Engine contributors
+# SPDX-FileCopyrightText: 2015 Oksana Shadura
+# SPDX-FileCopyrightText: 2011 David Martin
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Runs an application style check.
 # Features:
 #  - Aborts commit when the commit does not comply with the style guidelines.

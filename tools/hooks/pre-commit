@@ -1,4 +1,12 @@
 #!/bin/sh
+# SPDX-FileCopyrightText: 2025 Rebel SDK contributors
+# SPDX-FileCopyrightText: 2022 Rebel Engine contributors
+# SPDX-FileCopyrightText: 2017-2022 Godot Engine contributors
+# SPDX-FileCopyrightText: 2015 Oksana Shadura
+# SPDX-FileCopyrightText: 2011 David Martin
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
 # Git pre-commit hook that runs multiple hooks specified in $hooks.
 # Make sure this script is executable. Bypass hooks with git commit --no-verify.
 
