@@ -12,53 +12,37 @@
 #include "common/variant.h"
 
 namespace Rebel {
-
 class Dictionary {
-    rebel_dictionary _rebel_dictionary;
-
-    friend Variant::operator Dictionary() const;
-
-    inline explicit Dictionary(const rebel_dictionary& other) {
-        _rebel_dictionary = other;
-    }
-
 public:
     Dictionary();
     Dictionary(const Dictionary& other);
-    Dictionary& operator=(const Dictionary& other);
+    ~Dictionary();
 
     template <class... Args>
     static Dictionary make(Args... args) {
         return helpers::add_all(Dictionary(), args...);
     }
 
-    void clear();
-
-    bool empty() const;
-
-    void erase(const Variant& key);
-
-    bool has(const Variant& key) const;
-
-    bool has_all(const Array& keys) const;
-
-    uint32_t hash() const;
-
-    Array keys() const;
-
+    Dictionary& operator=(const Dictionary& other);
     Variant& operator[](const Variant& key);
-
     const Variant& operator[](const Variant& key) const;
 
+    bool empty() const;
+    bool has(const Variant& key) const;
+    bool has_all(const Array& keys) const;
     int size() const;
-
+    void clear();
+    void erase(const Variant& key);
+    uint32_t hash() const;
+    Array keys() const;
+    Array values() const;
     String to_json() const;
 
-    Array values() const;
-
-    ~Dictionary();
+private:
+    rebel_dictionary internal_dictionary;
+    friend Variant::operator Dictionary() const;
+    explicit Dictionary(const rebel_dictionary& other);
 };
-
 } // namespace Rebel
 
 #endif // DICTIONARY_H
