@@ -12,614 +12,612 @@
 #include <cmath>
 
 namespace Rebel {
-
-#define MIN(a, b) (a < b ? a : b)
-#define MAX(a, b) (a > b ? a : b)
-
-static String _to_hex(float p_val);
-
-static float _parse_col(const String& p_str, int p_ofs) {
-    int ig = 0;
-
-    for (int i = 0; i < 2; i++) {
-        int c = (int)(wchar_t)p_str[i + p_ofs];
-        int v = 0;
-
-        if (c >= '0' && c <= '9') {
-            v = c - '0';
-        } else if (c >= 'a' && c <= 'f') {
-            v  = c - 'a';
-            v += 10;
-        } else if (c >= 'A' && c <= 'F') {
-            v  = c - 'A';
-            v += 10;
-        } else {
-            return -1;
+namespace {
+template <typename T>
+constexpr T minimum(const T value1, const T value2, const T value3) {
+    if (value1 < value2) {
+        if (value1 < value3) {
+            return value1;
         }
+        return value3;
+    }
+    if (value2 < value3) {
+        return value2;
+    }
+    return value3;
+}
 
-        if (i == 0) {
-            ig += v * 16;
-        } else {
-            ig += v;
+template <typename T>
+constexpr T maximum(const T value1, const T value2, const T value3) {
+    if (value1 > value2) {
+        if (value1 > value3) {
+            return value1;
         }
+        return value3;
     }
-
-    return ig;
-}
-
-uint32_t Color::to_32() const {
-    uint32_t c   = (uint8_t)(a * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(r * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(g * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(b * 255);
-
-    return c;
-}
-
-uint32_t Color::to_ARGB32() const {
-    uint32_t c   = (uint8_t)(a * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(r * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(g * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(b * 255);
-
-    return c;
-}
-
-uint32_t Color::to_ABGR32() const {
-    uint32_t c   = (uint8_t)(a * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(b * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(g * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(r * 255);
-
-    return c;
-}
-
-uint64_t Color::to_ABGR64() const {
-    uint64_t c   = (uint16_t)(a * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(b * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(g * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(r * 65535);
-
-    return c;
-}
-
-uint64_t Color::to_ARGB64() const {
-    uint64_t c   = (uint16_t)(a * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(r * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(g * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(b * 65535);
-
-    return c;
-}
-
-uint32_t Color::to_RGBA32() const {
-    uint32_t c   = (uint8_t)(r * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(g * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(b * 255);
-    c          <<= 8;
-    c           |= (uint8_t)(a * 255);
-
-    return c;
-}
-
-uint64_t Color::to_RGBA64() const {
-    uint64_t c   = (uint16_t)(r * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(g * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(b * 65535);
-    c          <<= 16;
-    c           |= (uint16_t)(a * 65535);
-
-    return c;
-}
-
-float Color::gray() const {
-    return (r + g + b) / 3.0;
-}
-
-uint8_t Color::get_r8() const {
-    return (uint8_t)(r * 255.0);
-}
-
-uint8_t Color::get_g8() const {
-    return (uint8_t)(g * 255.0);
-}
-
-uint8_t Color::get_b8() const {
-    return (uint8_t)(b * 255.0);
-}
-
-uint8_t Color::get_a8() const {
-    return (uint8_t)(a * 255.0);
-}
-
-float Color::get_h() const {
-    float min = MIN(r, g);
-    min       = MIN(min, b);
-    float max = MAX(r, g);
-    max       = MAX(max, b);
-
-    float delta = max - min;
-
-    if (delta == 0) {
-        return 0;
+    if (value2 > value3) {
+        return value2;
     }
-
-    float h;
-    if (r == max) {
-        h = (g - b) / delta; // between yellow & magenta
-    } else if (g == max) {
-        h = 2 + (b - r) / delta; // between cyan & yellow
-    } else {
-        h = 4 + (r - g) / delta; // between magenta & cyan
-    }
-
-    h /= 6.0;
-    if (h < 0) {
-        h += 1.0;
-    }
-
-    return h;
+    return value3;
 }
 
-float Color::get_s() const {
-    float min   = MIN(r, g);
-    min         = MIN(min, b);
-    float max   = MAX(r, g);
-    max         = MAX(max, b);
-    float delta = max - min;
-    return (max != 0) ? (delta / max) : 0;
+template <typename T>
+constexpr T clamp(const T value, const T low, const T high) {
+    if (value < low) {
+        return low;
+    }
+    if (value > high) {
+        return high;
+    }
+    return value;
 }
 
-float Color::get_v() const {
-    float max = MAX(r, g);
-    max       = MAX(max, b);
-    return max;
+constexpr wchar_t char_from_nibble(const int nibble) {
+    if (nibble < 10) {
+        return static_cast<wchar_t>('0' + nibble);
+    }
+    return static_cast<wchar_t>('a' + nibble - 10);
 }
 
-void Color::set_hsv(float p_h, float p_s, float p_v, float p_alpha) {
-    int i;
-    float f, p, q, t;
-    a = p_alpha;
-
-    if (p_s == 0) {
-        // acp_hromatic (grey)
-        r = g = b = p_v;
-        return;
+constexpr int nibble_from_char(const wchar_t character) {
+    if (character >= '0' && character <= '9') {
+        return character - '0';
     }
-
-    p_h *= 6.0;
-    p_h  = ::fmod(p_h, 6);
-    i    = ::floor(p_h);
-
-    f = p_h - i;
-    p = p_v * (1 - p_s);
-    q = p_v * (1 - p_s * f);
-    t = p_v * (1 - p_s * (1 - f));
-
-    switch (i) {
-        case 0: // Red is the dominant color
-            r = p_v;
-            g = t;
-            b = p;
-            break;
-        case 1: // Green is the dominant color
-            r = q;
-            g = p_v;
-            b = p;
-            break;
-        case 2:
-            r = p;
-            g = p_v;
-            b = t;
-            break;
-        case 3: // Blue is the dominant color
-            r = p;
-            g = q;
-            b = p_v;
-            break;
-        case 4:
-            r = t;
-            g = p;
-            b = p_v;
-            break;
-        default: // (5) Red is the dominant color
-            r = p_v;
-            g = p;
-            b = q;
-            break;
+    if (character >= 'a' && character <= 'f') {
+        return 10 + character - 'a';
     }
+    if (character >= 'A' && character <= 'F') {
+        return 10 + character - 'A';
+    }
+    ERR_FAIL_V(-1);
 }
 
-Color Color::darkened(const float p_amount) const {
-    Color res = *this;
-    res.r     = res.r * (1.0f - p_amount);
-    res.g     = res.g * (1.0f - p_amount);
-    res.b     = res.b * (1.0f - p_amount);
-    return res;
+String hex_from_float(const float value) {
+    const int byte_value   = clamp(static_cast<int>(value * 255), 0, 255);
+    const int lower_nibble = byte_value & 0xF;
+    const int upper_nibble = byte_value >> 4 & 0xF;
+    const String lower{char_from_nibble(lower_nibble)};
+    const String upper{char_from_nibble(upper_nibble)};
+    return upper + lower;
 }
 
-Color Color::lightened(const float p_amount) const {
-    Color res = *this;
-    res.r     = res.r + (1.0f - res.r) * p_amount;
-    res.g     = res.g + (1.0f - res.g) * p_amount;
-    res.b     = res.b + (1.0f - res.b) * p_amount;
-    return res;
+float float_from_hex(const String& hex_string, const int offset) {
+    const int lower_nibble = nibble_from_char(hex_string[offset]);
+    const int upper_nibble = nibble_from_char(hex_string[offset + 1]);
+    const int value        = upper_nibble * 16 + lower_nibble;
+    return static_cast<float>(value) / 255.f;
 }
 
-Color Color::from_hsv(float p_h, float p_s, float p_v, float p_a) const {
-    p_h = ::fmod(p_h * 360.0f, 360.0f);
-    if (p_h < 0.0) {
-        p_h += 360.0f;
+constexpr float linear(const float value) {
+    if (value < 0.04045) {
+        return value / 12.92f;
     }
-
-    const float h_ = p_h / 60.0f;
-    const float c  = p_v * p_s;
-    const float x  = c * (1.0f - ::fabs(::fmod(h_, 2.0f) - 1.0f));
-    float r, g, b;
-
-    switch ((int)h_) {
-        case 0: {
-            r = c;
-            g = x;
-            b = 0;
-        } break;
-        case 1: {
-            r = x;
-            g = c;
-            b = 0;
-        } break;
-        case 2: {
-            r = 0;
-            g = c;
-            b = x;
-        } break;
-        case 3: {
-            r = 0;
-            g = x;
-            b = c;
-        } break;
-        case 4: {
-            r = x;
-            g = 0;
-            b = c;
-        } break;
-        case 5: {
-            r = c;
-            g = 0;
-            b = x;
-        } break;
-        default: {
-            r = 0;
-            g = 0;
-            b = 0;
-        } break;
-    }
-
-    const float m = p_v - c;
-    return Color(m + r, m + g, m + b, p_a);
+    return static_cast<float>(pow((value + 0.055) / (1 + 0.055), 2.4));
 }
+} // namespace
 
-void Color::invert() {
-    r = 1.0 - r;
-    g = 1.0 - g;
-    b = 1.0 - b;
-}
+Color::Color() : Color(0, 0, 0, 1) {}
 
-void Color::contrast() {
-    r = ::fmod(r + 0.5, 1.0);
-    g = ::fmod(g + 0.5, 1.0);
-    b = ::fmod(b + 0.5, 1.0);
-}
-
-Color Color::inverted() const {
-    Color c = *this;
-    c.invert();
-    return c;
-}
-
-Color Color::contrasted() const {
-    Color c = *this;
-    c.contrast();
-    return c;
-}
-
-Color Color::linear_interpolate(const Color& p_b, float p_t) const {
-    Color res = *this;
-
-    res.r += (p_t * (p_b.r - r));
-    res.g += (p_t * (p_b.g - g));
-    res.b += (p_t * (p_b.b - b));
-    res.a += (p_t * (p_b.a - a));
-
-    return res;
-}
-
-Color Color::blend(const Color& p_over) const {
-    Color res;
-    float sa = 1.0 - p_over.a;
-    res.a    = a * sa + p_over.a;
-    if (res.a == 0) {
-        return Color(0, 0, 0, 0);
-    } else {
-        res.r = (r * a * sa + p_over.r * p_over.a) / res.a;
-        res.g = (g * a * sa + p_over.g * p_over.a) / res.a;
-        res.b = (b * a * sa + p_over.b * p_over.a) / res.a;
-    }
-    return res;
-}
-
-Color Color::to_linear() const {
-    return Color(
-        r < 0.04045 ? r * (1.0 / 12.92)
-                    : ::pow((r + 0.055) * (1.0 / (1 + 0.055)), 2.4),
-        g < 0.04045 ? g * (1.0 / 12.92)
-                    : ::pow((g + 0.055) * (1.0 / (1 + 0.055)), 2.4),
-        b < 0.04045 ? b * (1.0 / 12.92)
-                    : ::pow((b + 0.055) * (1.0 / (1 + 0.055)), 2.4),
-        a
-    );
-}
-
-Color Color::hex(uint32_t p_hex) {
-    float a   = (p_hex & 0xFF) / 255.0;
-    p_hex   >>= 8;
-    float b   = (p_hex & 0xFF) / 255.0;
-    p_hex   >>= 8;
-    float g   = (p_hex & 0xFF) / 255.0;
-    p_hex   >>= 8;
-    float r   = (p_hex & 0xFF) / 255.0;
-
-    return Color(r, g, b, a);
-}
-
-Color Color::html(const String& p_color) {
-    String color = p_color;
-    if (color.length() == 0) {
-        return Color();
-    }
-    if (color[0] == '#') {
-        color = color.substr(1, color.length() - 1);
-    }
-
-    bool alpha = false;
-
-    if (color.length() == 8) {
-        alpha = true;
-    } else if (color.length() == 6) {
-        alpha = false;
-    } else {
-        ERR_PRINTS(String("Invalid Color Code: ") + p_color);
-        ERR_FAIL_V(Color());
-    }
-
-    int a = 255;
-    if (alpha) {
-        a = _parse_col(color, 0);
-        if (a < 0) {
-            ERR_PRINTS(String("Invalid Color Code: ") + p_color);
-            ERR_FAIL_V(Color());
-        }
-    }
-
-    int from = alpha ? 2 : 0;
-
-    int r = _parse_col(color, from + 0);
-    if (r < 0) {
-        ERR_PRINTS(String("Invalid Color Code: ") + p_color);
-        ERR_FAIL_V(Color());
-    }
-    int g = _parse_col(color, from + 2);
-    if (g < 0) {
-        ERR_PRINTS(String("Invalid Color Code: ") + p_color);
-        ERR_FAIL_V(Color());
-    }
-    int b = _parse_col(color, from + 4);
-    if (b < 0) {
-        ERR_PRINTS(String("Invalid Color Code: ") + p_color);
-        ERR_FAIL_V(Color());
-    }
-
-    return Color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
-}
-
-bool Color::html_is_valid(const String& p_color) {
-    String color = p_color;
-
-    if (color.length() == 0) {
-        return false;
-    }
-    if (color[0] == '#') {
-        color = color.substr(1, color.length() - 1);
-    }
-
-    bool alpha = false;
-
-    if (color.length() == 8) {
-        alpha = true;
-    } else if (color.length() == 6) {
-        alpha = false;
-    } else {
-        return false;
-    }
-
-    int a = 255;
-    if (alpha) {
-        a = _parse_col(color, 0);
-        if (a < 0) {
-            return false;
-        }
-    }
-
-    int from = alpha ? 2 : 0;
-
-    int r = _parse_col(color, from + 0);
-    if (r < 0) {
-        return false;
-    }
-    int g = _parse_col(color, from + 2);
-    if (g < 0) {
-        return false;
-    }
-    int b = _parse_col(color, from + 4);
-    if (b < 0) {
-        return false;
-    }
-
-    return true;
-}
-
-#ifndef CLAMP
-#define CLAMP(m_a, m_min, m_max)                                               \
-    (((m_a) < (m_min)) ? (m_min) : (((m_a) > (m_max)) ? m_max : m_a))
-#endif
-static String _to_hex(float p_val) {
-    int v = p_val * 255;
-    v     = CLAMP(v, 0, 255);
-    String ret;
-
-    for (int i = 0; i < 2; i++) {
-        wchar_t c[2] = {0, 0};
-        int lv       = v & 0xF;
-        if (lv < 10) {
-            c[0] = '0' + lv;
-        } else {
-            c[0] = 'a' + lv - 10;
-        }
-
-        v         >>= 4;
-        String cs   = (const wchar_t*)c;
-        ret         = cs + ret;
-    }
-
-    return ret;
-}
-
-String Color::to_html(bool p_alpha) const {
-    String txt;
-    txt += _to_hex(r);
-    txt += _to_hex(g);
-    txt += _to_hex(b);
-    if (p_alpha) {
-        txt = _to_hex(a) + txt;
-    }
-    return txt;
-}
+Color::Color(
+    const float red,
+    const float green,
+    const float blue,
+    const float alpha
+) :
+    r(red),
+    g(green),
+    b(blue),
+    a(alpha) {}
 
 Color::operator String() const {
     return String::num(r) + ", " + String::num(g) + ", " + String::num(b) + ", "
          + String::num(a);
 }
 
-bool Color::operator<(const Color& p_color) const {
-    if (r == p_color.r) {
-        if (g == p_color.g) {
-            if (b == p_color.b) {
-                return (a < p_color.a);
-            } else {
-                return (b < p_color.b);
+float& Color::operator[](const int index) {
+    return components[index];
+}
+
+const float& Color::operator[](const int index) const {
+    return components[index];
+}
+
+void Color::operator+=(const Color& other) {
+    r += other.r;
+    g += other.g;
+    b += other.b;
+    a += other.a;
+}
+
+void Color::operator-=(const Color& other) {
+    r -= other.r;
+    g -= other.g;
+    b -= other.b;
+    a -= other.a;
+}
+
+void Color::operator*=(const Color& other) {
+    r *= other.r;
+    g *= other.g;
+    b *= other.b;
+    a *= other.a;
+}
+
+void Color::operator*=(const real_t value) {
+    r *= value;
+    g *= value;
+    b *= value;
+    a *= value;
+}
+
+void Color::operator/=(const Color& other) {
+    r /= other.r;
+    g /= other.g;
+    b /= other.b;
+    a /= other.a;
+}
+
+void Color::operator/=(const real_t value) {
+    if (value == 0) {
+        r = 1.f;
+        g = 1.f;
+        b = 1.f;
+        a = 1.f;
+    } else {
+        r /= value;
+        g /= value;
+        b /= value;
+        a /= value;
+    }
+}
+
+uint8_t Color::get_r8() const {
+    return static_cast<uint8_t>(r * 255.0);
+}
+
+uint8_t Color::get_g8() const {
+    return static_cast<uint8_t>(g * 255.0);
+}
+
+uint8_t Color::get_b8() const {
+    return static_cast<uint8_t>(b * 255.0);
+}
+
+uint8_t Color::get_a8() const {
+    return static_cast<uint8_t>(a * 255.0);
+}
+
+float Color::get_h() const {
+    const float min   = minimum(r, g, b);
+    const float max   = maximum(r, g, b);
+    const float delta = max - min;
+    if (delta == 0) {
+        return 0;
+    }
+    float h;
+    if (r == max) {
+        // Between yellow & magenta.
+        h = (g - b) / delta;
+    } else if (g == max) {
+        // Between cyan & yellow.
+        h = 2 + (b - r) / delta;
+    } else { // b == max
+        // Between magenta & cyan.
+        h = 4 + (r - g) / delta;
+    }
+    h /= 6.f;
+    if (h < 0) {
+        h += 1.0;
+    }
+    return h;
+}
+
+float Color::get_s() const {
+    const float min   = minimum(r, g, b);
+    const float max   = maximum(r, b, b);
+    const float delta = max - min;
+    if (max == 0) {
+        return 0;
+    }
+    return delta / max;
+}
+
+float Color::get_v() const {
+    const float max = maximum(r, g, b);
+    return max;
+}
+
+void Color::set_hsv(
+    const float hue,
+    const float saturation,
+    const float value,
+    const float alpha
+) {
+    a = alpha;
+    if (saturation == 0) {
+        // Grey.
+        r = g = b = value;
+        return;
+    }
+    const double h = fmod(hue * 6.0, 6);
+    const int i    = static_cast<int>(floor(h));
+    const auto f   = static_cast<float>(h - i);
+    const float p  = value * (1 - saturation);
+    const float q  = value * (1 - saturation * f);
+    const float t  = value * (1 - saturation * (1 - f));
+    switch (i) {
+        case 0: // Red is the dominant color.
+            r = value;
+            g = t;
+            b = p;
+            break;
+        case 1: // Green is the dominant color.
+            r = q;
+            g = value;
+            b = p;
+            break;
+        case 2:
+            r = p;
+            g = value;
+            b = t;
+            break;
+        case 3: // Blue is the dominant color.
+            r = p;
+            g = q;
+            b = value;
+            break;
+        case 4:
+            r = t;
+            g = p;
+            b = value;
+            break;
+        case 5: // Red is the dominant color.
+            r = value;
+            g = p;
+            b = q;
+            break;
+        default:
+            ERR_FAIL();
+    }
+}
+
+uint32_t Color::to_32() const {
+    uint32_t result   = static_cast<uint8_t>(a * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(r * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(g * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(b * 255);
+    return result;
+}
+
+uint32_t Color::to_RGBA32() const {
+    uint32_t result   = static_cast<uint8_t>(r * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(g * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(b * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(a * 255);
+    return result;
+}
+
+uint64_t Color::to_RGBA64() const {
+    uint64_t result   = static_cast<uint16_t>(r * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(g * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(b * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(a * 65535);
+    return result;
+}
+
+uint32_t Color::to_ARGB32() const {
+    uint32_t result   = static_cast<uint8_t>(a * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(r * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(g * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(b * 255);
+    return result;
+}
+
+uint64_t Color::to_ARGB64() const {
+    uint64_t result   = static_cast<uint16_t>(a * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(r * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(g * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(b * 65535);
+    return result;
+}
+
+uint32_t Color::to_ABGR32() const {
+    uint32_t result   = static_cast<uint8_t>(a * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(b * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(g * 255);
+    result          <<= 8;
+    result           |= static_cast<uint8_t>(r * 255);
+    return result;
+}
+
+uint64_t Color::to_ABGR64() const {
+    uint64_t result   = static_cast<uint16_t>(a * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(b * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(g * 65535);
+    result          <<= 16;
+    result           |= static_cast<uint16_t>(r * 65535);
+    return result;
+}
+
+String Color::to_html(const bool p_alpha) const {
+    String result;
+    result += hex_from_float(r);
+    result += hex_from_float(g);
+    result += hex_from_float(b);
+    if (p_alpha) {
+        result = hex_from_float(a) + result;
+    }
+    return result;
+}
+
+void Color::invert() {
+    r = 1.f - r;
+    g = 1.f - g;
+    b = 1.f - b;
+}
+
+Color Color::inverted() const {
+    Color result = *this;
+    result.invert();
+    return result;
+}
+
+void Color::contrast() {
+    r = static_cast<float>(fmod(r + 0.5, 1.0));
+    g = static_cast<float>(fmod(g + 0.5, 1.0));
+    b = static_cast<float>(fmod(b + 0.5, 1.0));
+}
+
+Color Color::contrasted() const {
+    Color result = *this;
+    result.contrast();
+    return result;
+}
+
+Color Color::to_linear() const {
+    return {linear(r), linear(g), linear(b), a};
+}
+
+Color Color::linear_interpolate(const Color& to, const float factor) const {
+    const float red   = r + factor * (to.r - r);
+    const float green = g + factor * (to.g - g);
+    const float blue  = b + factor * (to.b - b);
+    const float alpha = a + factor * (to.a - a);
+    return {red, green, blue, alpha};
+}
+
+Color Color::blend(const Color& other) const {
+    const float factor = 1.f - other.a;
+    const float alpha  = a * factor + other.a;
+    if (alpha == 0) {
+        return {0, 0, 0, 0};
+    }
+    const float red   = (r * a * factor + other.r * other.a) / alpha;
+    const float green = (g * a * factor + other.g * other.a) / alpha;
+    const float blue  = (b * a * factor + other.b * other.a) / alpha;
+    return {red, green, blue, alpha};
+}
+
+Color Color::darkened(const float amount) const {
+    const float red   = r * (1.f - amount);
+    const float green = g * (1.f - amount);
+    const float blue  = b * (1.f - amount);
+    return {red, green, blue, a};
+}
+
+Color Color::lightened(const float amount) const {
+    const float red   = r + (1.f - r) * amount;
+    const float green = g + (1.f - g) * amount;
+    const float blue  = b + (1.f - b) * amount;
+    return {red, green, blue, a};
+}
+
+float Color::gray() const {
+    return (r + g + b) / 3.f;
+}
+
+Color Color::from_hsv(
+    const float hue,
+    const float saturation,
+    const float value,
+    const float alpha
+) {
+    double region = fmod(hue * 360.0, 360.0);
+    if (region < 0.0) {
+        region += 360.0;
+    }
+    region             /= 60.0;
+    const float chroma  = value * saturation;
+    const auto x =
+        static_cast<float>(chroma * (1.0f - fabs(fmod(region, 2.0f) - 1.0f)));
+    float red, green, blue;
+    switch (static_cast<int>(region)) {
+        case 0: {
+            red   = chroma;
+            green = x;
+            blue  = 0;
+        } break;
+        case 1: {
+            red   = x;
+            green = chroma;
+            blue  = 0;
+        } break;
+        case 2: {
+            red   = 0;
+            green = chroma;
+            blue  = x;
+        } break;
+        case 3: {
+            red   = 0;
+            green = x;
+            blue  = chroma;
+        } break;
+        case 4: {
+            red   = x;
+            green = 0;
+            blue  = chroma;
+        } break;
+        case 5: {
+            red   = chroma;
+            green = 0;
+            blue  = x;
+        } break;
+        default: {
+            red   = 0;
+            green = 0;
+            blue  = 0;
+        } break;
+    }
+    const float m = value - chroma;
+    return {m + red, m + green, m + blue, alpha};
+}
+
+Color Color::hex(uint32_t hex_value) {
+    const float alpha   = static_cast<float>(hex_value & 0xFF) / 255.f;
+    hex_value         >>= 8;
+    const float blue    = static_cast<float>(hex_value & 0xFF) / 255.f;
+    hex_value         >>= 8;
+    const float green   = static_cast<float>(hex_value & 0xFF) / 255.f;
+    hex_value         >>= 8;
+    const float red     = static_cast<float>(hex_value & 0xFF) / 255.f;
+    return {red, green, blue, alpha};
+}
+
+Color Color::html(const String& html_string) {
+    if (html_string.empty()) {
+        return {};
+    }
+    String string(html_string);
+    if (string[0] == '#') {
+        string = string.substr(1, string.length() - 1);
+    }
+    const int string_length = string.length();
+    ERR_FAIL_COND_V(string_length != 8 && string_length != 6, {});
+    const bool has_alpha = string_length == 8;
+    float alpha          = 1.f;
+    if (has_alpha) {
+        alpha = float_from_hex(string, 0);
+    }
+    const int offset  = has_alpha ? 2 : 0;
+    const float red   = float_from_hex(string, offset + 0);
+    const float green = float_from_hex(string, offset + 2);
+    const float blue  = float_from_hex(string, offset + 4);
+    if (alpha < 0 || red < 0 || green < 0 || blue < 0) {
+        ERR_PRINTS(String("Invalid Color Code: ") + html_string);
+        ERR_FAIL_V({});
+    }
+    return {red, green, blue, alpha};
+}
+
+bool Color::html_is_valid(const String& html_string) {
+    if (html_string.empty()) {
+        return {};
+    }
+    String string(html_string);
+    if (string[0] == '#') {
+        string = string.substr(1, string.length() - 1);
+    }
+    const int string_length = string.length();
+    ERR_FAIL_COND_V(string_length != 8 && string_length != 6, {});
+    const bool has_alpha = string_length == 8;
+    float alpha          = 1.f;
+    if (has_alpha) {
+        alpha = float_from_hex(string, 0);
+    }
+    const int offset  = has_alpha ? 2 : 0;
+    const float red   = float_from_hex(string, offset + 0);
+    const float green = float_from_hex(string, offset + 2);
+    const float blue  = float_from_hex(string, offset + 4);
+    if (alpha < 0 || red < 0 || green < 0 || blue < 0) {
+        return false;
+    }
+    return true;
+}
+
+bool operator==(const Color& left, const Color& right) {
+    return left.r == right.r && left.g == right.g && left.b == right.b
+        && left.a == right.a;
+}
+
+bool operator!=(const Color& left, const Color& right) {
+    return !(left == right);
+}
+
+bool operator<(const Color& left, const Color& right) {
+    if (left.r == right.r) {
+        if (left.g == right.g) {
+            if (left.b == right.b) {
+                return left.a < right.a;
             }
-        } else {
-            return g < p_color.g;
+            return left.b < right.b;
         }
-    } else {
-        return r < p_color.r;
+        return left.g < right.g;
     }
+    return left.r < right.r;
 }
 
-Color Color::operator+(const Color& p_color) const {
-    return Color(r + p_color.r, g + p_color.g, b + p_color.b, a + p_color.a);
+bool operator<=(const Color& left, const Color& right) {
+    return left < right || left == right;
 }
 
-void Color::operator+=(const Color& p_color) {
-    r = r + p_color.r;
-    g = g + p_color.g;
-    b = b + p_color.b;
-    a = a + p_color.a;
+bool operator>(const Color& left, const Color& right) {
+    return !(left <= right);
 }
 
-Color Color::operator-(const Color& p_color) const {
-    return Color(r - p_color.r, g - p_color.g, b - p_color.b, a - p_color.a);
+bool operator>=(const Color& left, const Color& right) {
+    return left > right || left == right;
 }
 
-void Color::operator-=(const Color& p_color) {
-    r = r - p_color.r;
-    g = g - p_color.g;
-    b = b - p_color.b;
-    a = a - p_color.a;
+Color operator+(Color left, const Color& right) {
+    left += right;
+    return left;
 }
 
-Color Color::operator*(const Color& p_color) const {
-    return Color(r * p_color.r, g * p_color.g, b * p_color.b, a * p_color.a);
+Color operator-(const Color& other) {
+    return {1.f - other.r, 1.f - other.g, 1.f - other.b, 1.f - other.a};
 }
 
-Color Color::operator*(const real_t& rvalue) const {
-    return Color(r * rvalue, g * rvalue, b * rvalue, a * rvalue);
+Color operator-(Color left, const Color& right) {
+    left -= right;
+    return left;
 }
 
-void Color::operator*=(const Color& p_color) {
-    r = r * p_color.r;
-    g = g * p_color.g;
-    b = b * p_color.b;
-    a = a * p_color.a;
+Color operator*(Color left, const Color& right) {
+    left *= right;
+    return left;
 }
 
-void Color::operator*=(const real_t& rvalue) {
-    r = r * rvalue;
-    g = g * rvalue;
-    b = b * rvalue;
-    a = a * rvalue;
+Color operator*(Color left, const real_t right) {
+    left *= right;
+    return left;
 }
 
-Color Color::operator/(const Color& p_color) const {
-    return Color(r / p_color.r, g / p_color.g, b / p_color.b, a / p_color.a);
+Color operator/(Color left, const Color& right) {
+    left /= right;
+    return left;
 }
 
-Color Color::operator/(const real_t& rvalue) const {
-    return Color(r / rvalue, g / rvalue, b / rvalue, a / rvalue);
+Color operator/(Color left, const real_t right) {
+    left /= right;
+    return left;
 }
-
-void Color::operator/=(const Color& p_color) {
-    r = r / p_color.r;
-    g = g / p_color.g;
-    b = b / p_color.b;
-    a = a / p_color.a;
-}
-
-void Color::operator/=(const real_t& rvalue) {
-    if (rvalue == 0) {
-        r = 1.0;
-        g = 1.0;
-        b = 1.0;
-        a = 1.0;
-    } else {
-        r = r / rvalue;
-        g = g / rvalue;
-        b = b / rvalue;
-        a = a / rvalue;
-    }
-}
-
-Color Color::operator-() const {
-    return Color(1.0 - r, 1.0 - g, 1.0 - b, 1.0 - a);
-}
-
 } // namespace Rebel

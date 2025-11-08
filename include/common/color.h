@@ -7,18 +7,12 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-#include "api/gdnative/color.h"
 #include "common/defs.h"
-#include "common/string.h"
-
-#include <cmath>
 
 namespace Rebel {
+class String;
 
-struct Color {
-private:
-    // static float _parse_col(const String& p_str, int p_ofs);
-
+class Color {
 public:
     union {
         struct {
@@ -31,128 +25,72 @@ public:
         float components[4];
     };
 
-    inline bool operator==(const Color& p_color) const {
-        return (
-            r == p_color.r && g == p_color.g && b == p_color.b && a == p_color.a
-        );
-    }
-
-    inline bool operator!=(const Color& p_color) const {
-        return (
-            r != p_color.r || g != p_color.g || b != p_color.b || a != p_color.a
-        );
-    }
-
-    uint32_t to_32() const;
-
-    uint32_t to_ARGB32() const;
-
-    uint32_t to_ABGR32() const;
-
-    uint64_t to_ABGR64() const;
-
-    uint64_t to_ARGB64() const;
-
-    uint32_t to_RGBA32() const;
-
-    uint64_t to_RGBA64() const;
-
-    float gray() const;
-
-    uint8_t get_r8() const;
-
-    uint8_t get_g8() const;
-
-    uint8_t get_b8() const;
-
-    uint8_t get_a8() const;
-
-    float get_h() const;
-
-    float get_s() const;
-
-    float get_v() const;
-
-    void set_hsv(float p_h, float p_s, float p_v, float p_alpha = 1.0);
-
-    Color darkened(const float amount) const;
-
-    Color lightened(const float amount) const;
-
-    Color from_hsv(float p_h, float p_s, float p_v, float p_a = 1.0) const;
-
-    inline float& operator[](int idx) {
-        return components[idx];
-    }
-
-    inline const float& operator[](int idx) const {
-        return components[idx];
-    }
-
-    Color operator+(const Color& p_color) const;
-    void operator+=(const Color& p_color);
-
-    Color operator-() const;
-    Color operator-(const Color& p_color) const;
-    void operator-=(const Color& p_color);
-
-    Color operator*(const Color& p_color) const;
-    Color operator*(const real_t& rvalue) const;
-    void operator*=(const Color& p_color);
-    void operator*=(const real_t& rvalue);
-
-    Color operator/(const Color& p_color) const;
-    Color operator/(const real_t& rvalue) const;
-    void operator/=(const Color& p_color);
-    void operator/=(const real_t& rvalue);
-
-    void invert();
-
-    void contrast();
-
-    Color inverted() const;
-
-    Color contrasted() const;
-
-    Color linear_interpolate(const Color& p_b, float p_t) const;
-
-    Color blend(const Color& p_over) const;
-
-    Color to_linear() const;
-
-    static Color hex(uint32_t p_hex);
-
-    static Color html(const String& p_color);
-
-    static bool html_is_valid(const String& p_color);
-
-    String to_html(bool p_alpha = true) const;
-
-    bool operator<(const Color& p_color) const; // used in set keys
+    Color();
+    Color(float red, float green, float blue, float alpha = 1.f);
 
     operator String() const;
+    float& operator[](int index);
+    const float& operator[](int index) const;
+    void operator+=(const Color& other);
+    void operator-=(const Color& other);
+    void operator*=(const Color& other);
+    void operator*=(real_t value);
+    void operator/=(const Color& other);
+    void operator/=(real_t value);
 
-    /**
-     * No construct parameters, r=0, g=0, b=0. a=255
-     */
-    inline Color() {
-        r = 0;
-        g = 0;
-        b = 0;
-        a = 1.0;
-    }
+    uint8_t get_r8() const;
+    uint8_t get_g8() const;
+    uint8_t get_b8() const;
+    uint8_t get_a8() const;
+    float get_h() const;
+    float get_s() const;
+    float get_v() const;
+    void set_hsv(float hue, float saturation, float value, float alpha = 1.f);
 
-    /**
-     * RGB / RGBA construct parameters. Alpha is optional, but defaults to 1.0
-     */
-    inline Color(float p_r, float p_g, float p_b, float p_a = 1.0) {
-        r = p_r;
-        g = p_g;
-        b = p_b;
-        a = p_a;
-    }
+    uint32_t to_32() const;
+    uint32_t to_RGBA32() const;
+    uint64_t to_RGBA64() const;
+    uint32_t to_ARGB32() const;
+    uint64_t to_ARGB64() const;
+    uint32_t to_ABGR32() const;
+    uint64_t to_ABGR64() const;
+    String to_html(bool p_alpha = true) const;
+
+    void invert();
+    Color inverted() const;
+    void contrast();
+    Color contrasted() const;
+    Color to_linear() const;
+    Color linear_interpolate(const Color& to, float factor) const;
+    Color blend(const Color& other) const;
+    Color darkened(float amount) const;
+    Color lightened(float amount) const;
+    float gray() const;
+
+    static Color from_hsv(
+        float hue,
+        float saturation,
+        float value,
+        float alpha = 1.f
+    );
+    static Color hex(uint32_t hex_value);
+    static Color html(const String& html_string);
+    static bool html_is_valid(const String& html_string);
 };
 
+bool operator==(const Color& left, const Color& right);
+bool operator!=(const Color& left, const Color& right);
+bool operator<(const Color& left, const Color& right);
+bool operator<=(const Color& left, const Color& right);
+bool operator>(const Color& left, const Color& right);
+bool operator>=(const Color& left, const Color& right);
+Color operator+(const Color& left, const Color& right);
+Color operator-(const Color& other);
+Color operator-(const Color& left, const Color& right);
+Color operator*(const Color& left, const Color& right);
+Color operator*(const Color& left, real_t right);
+Color operator/(const Color& left, const Color& right);
+Color operator/(const Color& left, real_t right);
 } // namespace Rebel
 
 #endif // COLOR_H
