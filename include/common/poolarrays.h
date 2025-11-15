@@ -8,824 +8,434 @@
 #define POOLARRAYS_H
 
 #include "api/gdnative/pool_arrays.h"
-#include "common/color.h"
 #include "common/defs.h"
-#include "common/rebelglobal.h"
-#include "common/string.h"
-#include "common/vector2.h"
-#include "common/vector3.h"
 
 namespace Rebel {
-
 class Array;
+class Color;
+class String;
+class Vector2;
+class Vector3;
 
 class PoolByteArray {
-    rebel_pool_byte_array _rebel_array;
-
-    friend class String;
-    friend class Variant;
-
-    inline explicit PoolByteArray(rebel_pool_byte_array a) {
-        _rebel_array = a;
-    }
-
 public:
     class Read {
-        friend class PoolByteArray;
-        rebel_pool_byte_array_read_access* _read_access;
-
     public:
-        inline Read() {
-            _read_access = nullptr;
-        }
+        Read() = default;
+        Read(const Read& other);
+        ~Read();
+        void operator=(const Read& other);
+        const uint8_t& operator[](int index) const;
+        const uint8_t* ptr() const;
 
-        inline Read(const Read& p_other) {
-            _read_access =
-                api->rebel_pool_byte_array_read_access_copy(p_other._read_access
-                );
-        }
-
-        inline ~Read() {
-            api->rebel_pool_byte_array_read_access_destroy(_read_access);
-        }
-
-        inline const uint8_t* ptr() const {
-            return api->rebel_pool_byte_array_read_access_ptr(_read_access);
-        }
-
-        inline const uint8_t& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Read& p_other) {
-            api->rebel_pool_byte_array_read_access_operator_assign(
-                _read_access,
-                p_other._read_access
-            );
-        }
+    private:
+        rebel_pool_byte_array_read_access* internal_read = nullptr;
+        friend class PoolByteArray;
     };
 
     class Write {
-        friend class PoolByteArray;
-        rebel_pool_byte_array_write_access* _write_access;
-
     public:
-        inline Write() {
-            _write_access = nullptr;
-        }
+        Write() = default;
+        Write(const Write& other);
+        ~Write();
+        void operator=(const Write& other);
+        uint8_t& operator[](int index) const;
+        uint8_t* ptr() const;
 
-        inline Write(const Write& p_other) {
-            _write_access = api->rebel_pool_byte_array_write_access_copy(
-                p_other._write_access
-            );
-        }
-
-        inline ~Write() {
-            api->rebel_pool_byte_array_write_access_destroy(_write_access);
-        }
-
-        inline uint8_t* ptr() const {
-            return api->rebel_pool_byte_array_write_access_ptr(_write_access);
-        }
-
-        inline uint8_t& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Write& p_other) {
-            api->rebel_pool_byte_array_write_access_operator_assign(
-                _write_access,
-                p_other._write_access
-            );
-        }
+    private:
+        rebel_pool_byte_array_write_access* internal_write = nullptr;
+        friend class PoolByteArray;
     };
 
     PoolByteArray();
-    PoolByteArray(const PoolByteArray& p_other);
-    PoolByteArray& operator=(const PoolByteArray& p_other);
-
+    PoolByteArray(const PoolByteArray& other);
     PoolByteArray(const Array& array);
-
-    Read read() const;
-
-    Write write();
-
-    void append(const uint8_t data);
-
-    void append_array(const PoolByteArray& array);
-
-    int insert(const int idx, const uint8_t data);
-
-    void invert();
-
-    void push_back(const uint8_t data);
-
-    void remove(const int idx);
-
-    void resize(const int size);
-
-    void set(const int idx, const uint8_t data);
-
-    uint8_t operator[](const int idx);
-
-    int size() const;
-
     ~PoolByteArray();
-};
 
-class PoolIntArray {
-    rebel_pool_int_array _rebel_array;
-
-    friend class Variant;
-
-    explicit inline PoolIntArray(rebel_pool_int_array a) {
-        _rebel_array = a;
-    }
-
-public:
-    class Read {
-        friend class PoolIntArray;
-        rebel_pool_int_array_read_access* _read_access;
-
-    public:
-        inline Read() {
-            _read_access = nullptr;
-        }
-
-        inline Read(const Read& p_other) {
-            _read_access =
-                api->rebel_pool_int_array_read_access_copy(p_other._read_access
-                );
-        }
-
-        inline ~Read() {
-            api->rebel_pool_int_array_read_access_destroy(_read_access);
-        }
-
-        inline const int* ptr() const {
-            return api->rebel_pool_int_array_read_access_ptr(_read_access);
-        }
-
-        inline const int& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Read& p_other) {
-            api->rebel_pool_int_array_read_access_operator_assign(
-                _read_access,
-                p_other._read_access
-            );
-        }
-    };
-
-    class Write {
-        friend class PoolIntArray;
-        rebel_pool_int_array_write_access* _write_access;
-
-    public:
-        inline Write() {
-            _write_access = nullptr;
-        }
-
-        inline Write(const Write& p_other) {
-            _write_access = api->rebel_pool_int_array_write_access_copy(
-                p_other._write_access
-            );
-        }
-
-        inline ~Write() {
-            api->rebel_pool_int_array_write_access_destroy(_write_access);
-        }
-
-        inline int* ptr() const {
-            return api->rebel_pool_int_array_write_access_ptr(_write_access);
-        }
-
-        inline int& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Write& p_other) {
-            api->rebel_pool_int_array_write_access_operator_assign(
-                _write_access,
-                p_other._write_access
-            );
-        }
-    };
-
-    PoolIntArray();
-    PoolIntArray(const PoolIntArray& p_other);
-    PoolIntArray& operator=(const PoolIntArray& p_other);
-
-    PoolIntArray(const Array& array);
+    PoolByteArray& operator=(const PoolByteArray& other);
+    uint8_t operator[](int index) const;
 
     Read read() const;
-
     Write write();
 
-    void append(const int data);
-
-    void append_array(const PoolIntArray& array);
-
-    int insert(const int idx, const int data);
-
+    int size() const;
+    void resize(int size);
+    void append(uint8_t value);
+    void append_array(const PoolByteArray& array);
+    void push_back(uint8_t value);
+    int insert(int index, uint8_t value);
+    void remove(int index);
+    void set(int index, uint8_t value);
     void invert();
 
-    void push_back(const int data);
-
-    void remove(const int idx);
-
-    void resize(const int size);
-
-    void set(const int idx, const int data);
-
-    int operator[](const int idx);
-
-    int size() const;
-
-    ~PoolIntArray();
-};
-
-class PoolRealArray {
-    rebel_pool_real_array _rebel_array;
-
-    friend class Variant;
-
-    explicit inline PoolRealArray(rebel_pool_real_array a) {
-        _rebel_array = a;
-    }
-
-public:
-    class Read {
-        friend class PoolRealArray;
-        rebel_pool_real_array_read_access* _read_access;
-
-    public:
-        inline Read() {
-            _read_access = nullptr;
-        }
-
-        inline Read(const Read& p_other) {
-            _read_access =
-                api->rebel_pool_real_array_read_access_copy(p_other._read_access
-                );
-        }
-
-        inline ~Read() {
-            api->rebel_pool_real_array_read_access_destroy(_read_access);
-        }
-
-        inline const real_t* ptr() const {
-            return api->rebel_pool_real_array_read_access_ptr(_read_access);
-        }
-
-        inline const real_t& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Read& p_other) {
-            api->rebel_pool_real_array_read_access_operator_assign(
-                _read_access,
-                p_other._read_access
-            );
-        }
-    };
-
-    class Write {
-        friend class PoolRealArray;
-        rebel_pool_real_array_write_access* _write_access;
-
-    public:
-        inline Write() {
-            _write_access = nullptr;
-        }
-
-        inline Write(const Write& p_other) {
-            _write_access = api->rebel_pool_real_array_write_access_copy(
-                p_other._write_access
-            );
-        }
-
-        inline ~Write() {
-            api->rebel_pool_real_array_write_access_destroy(_write_access);
-        }
-
-        inline real_t* ptr() const {
-            return api->rebel_pool_real_array_write_access_ptr(_write_access);
-        }
-
-        inline real_t& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Write& p_other) {
-            api->rebel_pool_real_array_write_access_operator_assign(
-                _write_access,
-                p_other._write_access
-            );
-        }
-    };
-
-    PoolRealArray();
-    PoolRealArray(const PoolRealArray& p_other);
-    PoolRealArray& operator=(const PoolRealArray& p_other);
-
-    PoolRealArray(const Array& array);
-
-    Read read() const;
-
-    Write write();
-
-    void append(const real_t data);
-
-    void append_array(const PoolRealArray& array);
-
-    int insert(const int idx, const real_t data);
-
-    void invert();
-
-    void push_back(const real_t data);
-
-    void remove(const int idx);
-
-    void resize(const int size);
-
-    void set(const int idx, const real_t data);
-
-    real_t operator[](const int idx);
-
-    int size() const;
-
-    ~PoolRealArray();
-};
-
-class PoolStringArray {
-    rebel_pool_string_array _rebel_array;
+private:
+    rebel_pool_byte_array internal_array;
 
     friend class String;
     friend class Variant;
 
-    explicit inline PoolStringArray(rebel_pool_string_array a) {
-        _rebel_array = a;
-    }
-
-public:
-    class Read {
-        friend class PoolStringArray;
-        rebel_pool_string_array_read_access* _read_access;
-
-    public:
-        inline Read() {
-            _read_access = nullptr;
-        }
-
-        inline Read(const Read& p_other) {
-            _read_access = api->rebel_pool_string_array_read_access_copy(
-                p_other._read_access
-            );
-        }
-
-        inline ~Read() {
-            api->rebel_pool_string_array_read_access_destroy(_read_access);
-        }
-
-        inline const String* ptr() const {
-            return (const String*)api->rebel_pool_string_array_read_access_ptr(
-                _read_access
-            );
-        }
-
-        inline const String& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Read& p_other) {
-            api->rebel_pool_string_array_read_access_operator_assign(
-                _read_access,
-                p_other._read_access
-            );
-        }
-    };
-
-    class Write {
-        friend class PoolStringArray;
-        rebel_pool_string_array_write_access* _write_access;
-
-    public:
-        inline Write() {
-            _write_access = nullptr;
-        }
-
-        inline Write(const Write& p_other) {
-            _write_access = api->rebel_pool_string_array_write_access_copy(
-                p_other._write_access
-            );
-        }
-
-        inline ~Write() {
-            api->rebel_pool_string_array_write_access_destroy(_write_access);
-        }
-
-        inline String* ptr() const {
-            return (String*)api->rebel_pool_string_array_write_access_ptr(
-                _write_access
-            );
-        }
-
-        inline String& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Write& p_other) {
-            api->rebel_pool_string_array_write_access_operator_assign(
-                _write_access,
-                p_other._write_access
-            );
-        }
-    };
-
-    PoolStringArray();
-    PoolStringArray(const PoolStringArray& p_other);
-    PoolStringArray& operator=(const PoolStringArray& p_other);
-
-    PoolStringArray(const Array& array);
-
-    Read read() const;
-
-    Write write();
-
-    void append(const String& data);
-
-    void append_array(const PoolStringArray& array);
-
-    int insert(const int idx, const String& data);
-
-    void invert();
-
-    void push_back(const String& data);
-
-    void remove(const int idx);
-
-    void resize(const int size);
-
-    void set(const int idx, const String& data);
-
-    const String operator[](const int idx);
-
-    int size() const;
-
-    ~PoolStringArray();
-};
-
-class PoolVector2Array {
-    rebel_pool_vector2_array _rebel_array;
-
-    friend class Variant;
-
-    explicit inline PoolVector2Array(rebel_pool_vector2_array a) {
-        _rebel_array = a;
-    }
-
-public:
-    class Read {
-        friend class PoolVector2Array;
-        rebel_pool_vector2_array_read_access* _read_access;
-
-    public:
-        inline Read() {
-            _read_access = nullptr;
-        }
-
-        inline Read(const Read& p_other) {
-            _read_access = api->rebel_pool_vector2_array_read_access_copy(
-                p_other._read_access
-            );
-        }
-
-        inline ~Read() {
-            api->rebel_pool_vector2_array_read_access_destroy(_read_access);
-        }
-
-        inline const Vector2* ptr() const {
-            return (const Vector2*)
-                api->rebel_pool_vector2_array_read_access_ptr(_read_access);
-        }
-
-        inline const Vector2& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Read& p_other) {
-            api->rebel_pool_vector2_array_read_access_operator_assign(
-                _read_access,
-                p_other._read_access
-            );
-        }
-    };
-
-    class Write {
-        friend class PoolVector2Array;
-        rebel_pool_vector2_array_write_access* _write_access;
-
-    public:
-        inline Write() {
-            _write_access = nullptr;
-        }
-
-        inline Write(const Write& p_other) {
-            _write_access = api->rebel_pool_vector2_array_write_access_copy(
-                p_other._write_access
-            );
-        }
-
-        inline ~Write() {
-            api->rebel_pool_vector2_array_write_access_destroy(_write_access);
-        }
-
-        inline Vector2* ptr() const {
-            return (Vector2*)api->rebel_pool_vector2_array_write_access_ptr(
-                _write_access
-            );
-        }
-
-        inline Vector2& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Write& p_other) {
-            api->rebel_pool_vector2_array_write_access_operator_assign(
-                _write_access,
-                p_other._write_access
-            );
-        }
-    };
-
-    PoolVector2Array();
-    PoolVector2Array(const PoolVector2Array& p_other);
-    PoolVector2Array& operator=(const PoolVector2Array& p_other);
-
-    PoolVector2Array(const Array& array);
-
-    Read read() const;
-
-    Write write();
-
-    void append(const Vector2& data);
-
-    void append_array(const PoolVector2Array& array);
-
-    int insert(const int idx, const Vector2& data);
-
-    void invert();
-
-    void push_back(const Vector2& data);
-
-    void remove(const int idx);
-
-    void resize(const int size);
-
-    void set(const int idx, const Vector2& data);
-
-    const Vector2 operator[](const int idx);
-
-    int size() const;
-
-    ~PoolVector2Array();
-};
-
-class PoolVector3Array {
-    rebel_pool_vector3_array _rebel_array;
-
-    friend class Variant;
-
-    explicit inline PoolVector3Array(rebel_pool_vector3_array a) {
-        _rebel_array = a;
-    }
-
-public:
-    class Read {
-        friend class PoolVector3Array;
-        rebel_pool_vector3_array_read_access* _read_access;
-
-    public:
-        inline Read() {
-            _read_access = nullptr;
-        }
-
-        inline Read(const Read& p_other) {
-            _read_access = api->rebel_pool_vector3_array_read_access_copy(
-                p_other._read_access
-            );
-        }
-
-        inline ~Read() {
-            api->rebel_pool_vector3_array_read_access_destroy(_read_access);
-        }
-
-        inline const Vector3* ptr() const {
-            return (const Vector3*)
-                api->rebel_pool_vector3_array_read_access_ptr(_read_access);
-        }
-
-        inline const Vector3& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Read& p_other) {
-            api->rebel_pool_vector3_array_read_access_operator_assign(
-                _read_access,
-                p_other._read_access
-            );
-        }
-    };
-
-    class Write {
-        friend class PoolVector3Array;
-        rebel_pool_vector3_array_write_access* _write_access;
-
-    public:
-        inline Write() {
-            _write_access = nullptr;
-        }
-
-        inline Write(const Write& p_other) {
-            _write_access = api->rebel_pool_vector3_array_write_access_copy(
-                p_other._write_access
-            );
-        }
-
-        inline ~Write() {
-            api->rebel_pool_vector3_array_write_access_destroy(_write_access);
-        }
-
-        inline Vector3* ptr() const {
-            return (Vector3*)api->rebel_pool_vector3_array_write_access_ptr(
-                _write_access
-            );
-        }
-
-        inline Vector3& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Write& p_other) {
-            api->rebel_pool_vector3_array_write_access_operator_assign(
-                _write_access,
-                p_other._write_access
-            );
-        }
-    };
-
-    PoolVector3Array();
-    PoolVector3Array(const PoolVector3Array& p_other);
-    PoolVector3Array& operator=(const PoolVector3Array& p_other);
-
-    PoolVector3Array(const Array& array);
-
-    Read read() const;
-
-    Write write();
-
-    void append(const Vector3& data);
-
-    void append_array(const PoolVector3Array& array);
-
-    int insert(const int idx, const Vector3& data);
-
-    void invert();
-
-    void push_back(const Vector3& data);
-
-    void remove(const int idx);
-
-    void resize(const int size);
-
-    void set(const int idx, const Vector3& data);
-
-    const Vector3 operator[](const int idx);
-
-    int size() const;
-
-    ~PoolVector3Array();
+    explicit PoolByteArray(rebel_pool_byte_array other);
 };
 
 class PoolColorArray {
-    rebel_pool_color_array _rebel_array;
-
-    friend class Variant;
-
-    explicit inline PoolColorArray(rebel_pool_color_array a) {
-        _rebel_array = a;
-    }
-
 public:
     class Read {
-        friend class PoolColorArray;
-        rebel_pool_color_array_read_access* _read_access;
-
     public:
-        inline Read() {
-            _read_access = nullptr;
-        }
+        Read() = default;
+        Read(const Read& other);
+        ~Read();
+        void operator=(const Read& other);
+        const Color& operator[](int index) const;
+        const Color* ptr() const;
 
-        inline Read(const Read& p_other) {
-            _read_access = api->rebel_pool_color_array_read_access_copy(
-                p_other._read_access
-            );
-        }
-
-        inline ~Read() {
-            api->rebel_pool_color_array_read_access_destroy(_read_access);
-        }
-
-        inline const Color* ptr() const {
-            return (const Color*)api->rebel_pool_color_array_read_access_ptr(
-                _read_access
-            );
-        }
-
-        inline const Color& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Read& p_other) {
-            api->rebel_pool_color_array_read_access_operator_assign(
-                _read_access,
-                p_other._read_access
-            );
-        }
+    private:
+        rebel_pool_color_array_read_access* internal_read = nullptr;
+        friend class PoolColorArray;
     };
 
     class Write {
-        friend class PoolColorArray;
-        rebel_pool_color_array_write_access* _write_access;
-
     public:
-        inline Write() {
-            _write_access = nullptr;
-        }
+        Write() = default;
+        Write(const Write& other);
+        ~Write();
+        void operator=(const Write& other);
+        Color& operator[](int index) const;
+        Color* ptr() const;
 
-        inline Write(const Write& p_other) {
-            _write_access = api->rebel_pool_color_array_write_access_copy(
-                p_other._write_access
-            );
-        }
-
-        inline ~Write() {
-            api->rebel_pool_color_array_write_access_destroy(_write_access);
-        }
-
-        inline Color* ptr() const {
-            return (Color*)api->rebel_pool_color_array_write_access_ptr(
-                _write_access
-            );
-        }
-
-        inline Color& operator[](int p_idx) const {
-            return ptr()[p_idx];
-        }
-
-        inline void operator=(const Write& p_other) {
-            api->rebel_pool_color_array_write_access_operator_assign(
-                _write_access,
-                p_other._write_access
-            );
-        }
+    private:
+        rebel_pool_color_array_write_access* internal_write = nullptr;
+        friend class PoolColorArray;
     };
 
     PoolColorArray();
-    PoolColorArray(const PoolColorArray& p_other);
-    PoolColorArray& operator=(const PoolColorArray& p_other);
-
+    PoolColorArray(const PoolColorArray& other);
     PoolColorArray(const Array& array);
+    ~PoolColorArray();
+
+    PoolColorArray& operator=(const PoolColorArray& other);
+    Color operator[](int index) const;
 
     Read read() const;
-
     Write write();
 
-    void append(const Color& data);
-
+    int size() const;
+    void resize(int size);
+    void append(const Color& value);
     void append_array(const PoolColorArray& array);
-
-    int insert(const int idx, const Color& data);
-
+    void push_back(const Color& value);
+    int insert(int index, const Color& value);
+    void remove(int index);
+    void set(int index, const Color& value);
     void invert();
 
-    void push_back(const Color& data);
+private:
+    rebel_pool_color_array internal_array;
 
-    void remove(const int idx);
+    friend class String;
+    friend class Variant;
 
-    void resize(const int size);
-
-    void set(const int idx, const Color& data);
-
-    const Color operator[](const int idx);
-
-    int size() const;
-
-    ~PoolColorArray();
+    explicit PoolColorArray(rebel_pool_color_array other);
 };
 
+class PoolIntArray {
+public:
+    class Read {
+    public:
+        Read() = default;
+        Read(const Read& other);
+        ~Read();
+        void operator=(const Read& other);
+        const int& operator[](int index) const;
+        const int* ptr() const;
+
+    private:
+        rebel_pool_int_array_read_access* internal_read = nullptr;
+        friend class PoolIntArray;
+    };
+
+    class Write {
+    public:
+        Write() = default;
+        Write(const Write& other);
+        ~Write();
+        void operator=(const Write& other);
+        int& operator[](int index) const;
+        int* ptr() const;
+
+    private:
+        rebel_pool_int_array_write_access* internal_write = nullptr;
+        friend class PoolIntArray;
+    };
+
+    PoolIntArray();
+    PoolIntArray(const PoolIntArray& other);
+    PoolIntArray(const Array& array);
+    ~PoolIntArray();
+
+    PoolIntArray& operator=(const PoolIntArray& other);
+    int operator[](int index) const;
+
+    Read read() const;
+    Write write();
+
+    int size() const;
+    void resize(int size);
+    void append(int value);
+    void append_array(const PoolIntArray& array);
+    void push_back(int value);
+    int insert(int index, int value);
+    void remove(int index);
+    void set(int index, int value);
+    void invert();
+
+private:
+    rebel_pool_int_array internal_array;
+
+    friend class String;
+    friend class Variant;
+
+    explicit PoolIntArray(rebel_pool_int_array other);
+};
+
+class PoolRealArray {
+public:
+    class Read {
+    public:
+        Read() = default;
+        Read(const Read& other);
+        ~Read();
+        void operator=(const Read& other);
+        const real_t& operator[](int index) const;
+        const real_t* ptr() const;
+
+    private:
+        rebel_pool_real_array_read_access* internal_read = nullptr;
+        friend class PoolRealArray;
+    };
+
+    class Write {
+    public:
+        Write() = default;
+        Write(const Write& other);
+        ~Write();
+        void operator=(const Write& other);
+        real_t& operator[](int index) const;
+        real_t* ptr() const;
+
+    private:
+        rebel_pool_real_array_write_access* internal_write = nullptr;
+        friend class PoolRealArray;
+    };
+
+    PoolRealArray();
+    PoolRealArray(const PoolRealArray& other);
+    PoolRealArray(const Array& array);
+    ~PoolRealArray();
+
+    PoolRealArray& operator=(const PoolRealArray& other);
+    real_t operator[](int index) const;
+
+    Read read() const;
+    Write write();
+
+    int size() const;
+    void resize(int size);
+    void append(real_t value);
+    void append_array(const PoolRealArray& array);
+    void push_back(real_t value);
+    int insert(int index, real_t value);
+    void remove(int index);
+    void set(int index, real_t value);
+    void invert();
+
+private:
+    rebel_pool_real_array internal_array;
+
+    friend class String;
+    friend class Variant;
+
+    explicit PoolRealArray(rebel_pool_real_array other);
+};
+
+class PoolStringArray {
+public:
+    class Read {
+    public:
+        Read() = default;
+        Read(const Read& other);
+        ~Read();
+        void operator=(const Read& other);
+        const String& operator[](int index) const;
+        const String* ptr() const;
+
+    private:
+        rebel_pool_string_array_read_access* internal_read = nullptr;
+        friend class PoolStringArray;
+    };
+
+    class Write {
+    public:
+        Write() = default;
+        Write(const Write& other);
+        ~Write();
+        void operator=(const Write& other);
+        String& operator[](int index) const;
+        String* ptr() const;
+
+    private:
+        rebel_pool_string_array_write_access* internal_write = nullptr;
+        friend class PoolStringArray;
+    };
+
+    PoolStringArray();
+    PoolStringArray(const PoolStringArray& other);
+    PoolStringArray(const Array& array);
+    ~PoolStringArray();
+
+    PoolStringArray& operator=(const PoolStringArray& other);
+    String operator[](int index) const;
+
+    Read read() const;
+    Write write();
+
+    int size() const;
+    void resize(int size);
+    void append(const String& value);
+    void append_array(const PoolStringArray& array);
+    void push_back(const String& value);
+    int insert(int index, const String& value);
+    void remove(int index);
+    void set(int index, const String& value);
+    void invert();
+
+private:
+    rebel_pool_string_array internal_array;
+
+    friend class String;
+    friend class Variant;
+
+    explicit PoolStringArray(rebel_pool_string_array other);
+};
+
+class PoolVector2Array {
+public:
+    class Read {
+    public:
+        Read() = default;
+        Read(const Read& other);
+        ~Read();
+        void operator=(const Read& other);
+        const Vector2& operator[](int index) const;
+        const Vector2* ptr() const;
+
+    private:
+        rebel_pool_vector2_array_read_access* internal_read = nullptr;
+        friend class PoolVector2Array;
+    };
+
+    class Write {
+    public:
+        Write() = default;
+        Write(const Write& other);
+        ~Write();
+        void operator=(const Write& other);
+        Vector2& operator[](int index) const;
+        Vector2* ptr() const;
+
+    private:
+        rebel_pool_vector2_array_write_access* internal_write = nullptr;
+        friend class PoolVector2Array;
+    };
+
+    PoolVector2Array();
+    PoolVector2Array(const PoolVector2Array& other);
+    PoolVector2Array(const Array& array);
+    ~PoolVector2Array();
+
+    PoolVector2Array& operator=(const PoolVector2Array& other);
+    Vector2 operator[](int index) const;
+
+    Read read() const;
+    Write write();
+
+    int size() const;
+    void resize(int size);
+    void append(const Vector2& value);
+    void append_array(const PoolVector2Array& array);
+    void push_back(const Vector2& value);
+    int insert(int index, const Vector2& value);
+    void remove(int index);
+    void set(int index, const Vector2& value);
+    void invert();
+
+private:
+    rebel_pool_vector2_array internal_array;
+
+    friend class String;
+    friend class Variant;
+
+    explicit PoolVector2Array(rebel_pool_vector2_array other);
+};
+
+class PoolVector3Array {
+public:
+    class Read {
+    public:
+        Read() = default;
+        Read(const Read& other);
+        ~Read();
+        void operator=(const Read& other);
+        const Vector3& operator[](int index) const;
+        const Vector3* ptr() const;
+
+    private:
+        rebel_pool_vector3_array_read_access* internal_read = nullptr;
+        friend class PoolVector3Array;
+    };
+
+    class Write {
+    public:
+        Write() = default;
+        Write(const Write& other);
+        ~Write();
+        void operator=(const Write& other);
+        Vector3& operator[](int index) const;
+        Vector3* ptr() const;
+
+    private:
+        rebel_pool_vector3_array_write_access* internal_write = nullptr;
+        friend class PoolVector3Array;
+    };
+
+    PoolVector3Array();
+    PoolVector3Array(const PoolVector3Array& other);
+    PoolVector3Array(const Array& array);
+    ~PoolVector3Array();
+
+    PoolVector3Array& operator=(const PoolVector3Array& other);
+    Vector3 operator[](int index) const;
+
+    Read read() const;
+    Write write();
+
+    int size() const;
+    void resize(int size);
+    void append(const Vector3& value);
+    void append_array(const PoolVector3Array& array);
+    void push_back(const Vector3& value);
+    int insert(int index, const Vector3& value);
+    void remove(int index);
+    void set(int index, const Vector3& value);
+    void invert();
+
+private:
+    rebel_pool_vector3_array internal_array;
+
+    friend class String;
+    friend class Variant;
+
+    explicit PoolVector3Array(rebel_pool_vector3_array other);
+};
 } // namespace Rebel
 
 #endif // POOLARRAYS_H
