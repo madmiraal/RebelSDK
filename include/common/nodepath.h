@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef NODEPATH_H
-#define NODEPATH_H
+#ifndef NODE_PATH_H
+#define NODE_PATH_H
 
 #include "api/gdnative/node_path.h"
 #include "common/string.h"
@@ -13,48 +13,33 @@
 namespace Rebel {
 
 class NodePath {
-    rebel_node_path _node_path;
+public:
+    NodePath();
+    NodePath(const NodePath& other);
+    NodePath(const String& from);
+    NodePath(const char* contents);
+    ~NodePath();
+
+    void operator=(const NodePath& other);
+    bool operator==(const NodePath& right) const;
+    operator String() const;
+
+    bool is_empty() const;
+    bool is_absolute() const;
+    int get_name_count() const;
+    int get_subname_count() const;
+    String get_name(int idx) const;
+    String get_subname(int idx) const;
+    String get_concatenated_subnames() const;
+    NodePath get_as_property_path() const;
+
+private:
+    rebel_node_path internal_node_path;
 
     friend class Variant;
 
-    inline explicit NodePath(rebel_node_path node_path) {
-        _node_path = node_path;
-    }
-
-public:
-    NodePath();
-
-    NodePath(const NodePath& other);
-
-    NodePath(const String& from);
-
-    NodePath(const char* contents);
-
-    String get_name(const int idx) const;
-
-    int get_name_count() const;
-
-    String get_subname(const int idx) const;
-
-    int get_subname_count() const;
-
-    bool is_absolute() const;
-
-    bool is_empty() const;
-
-    NodePath get_as_property_path() const;
-
-    String get_concatenated_subnames() const;
-
-    operator String() const;
-
-    void operator=(const NodePath& other);
-
-    bool operator==(const NodePath& other);
-
-    ~NodePath();
+    explicit NodePath(rebel_node_path other);
 };
-
 } // namespace Rebel
 
-#endif // NODEPATH_H
+#endif // NODE_PATH_H

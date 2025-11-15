@@ -12,81 +12,101 @@
 namespace Rebel {
 
 NodePath::NodePath() {
-    String from = "";
-    api->rebel_node_path_new(&_node_path, (rebel_string*)&from);
+    const String from;
+    api->rebel_node_path_new(
+        &internal_node_path,
+        reinterpret_cast<const rebel_string*>(&from)
+    );
 }
 
 NodePath::NodePath(const NodePath& other) {
-    String from = other;
-    api->rebel_node_path_new(&_node_path, (rebel_string*)&from);
+    const String from{other};
+    api->rebel_node_path_new(
+        &internal_node_path,
+        reinterpret_cast<const rebel_string*>(&from)
+    );
 }
 
+NodePath::NodePath(const rebel_node_path other) : internal_node_path(other) {}
+
 NodePath::NodePath(const String& from) {
-    api->rebel_node_path_new(&_node_path, (rebel_string*)&from);
+    api->rebel_node_path_new(
+        &internal_node_path,
+        reinterpret_cast<const rebel_string*>(&from)
+    );
 }
 
 NodePath::NodePath(const char* contents) {
-    String from = contents;
-    api->rebel_node_path_new(&_node_path, (rebel_string*)&from);
-}
-
-String NodePath::get_name(const int idx) const {
-    rebel_string str = api->rebel_node_path_get_name(&_node_path, idx);
-    return String(str);
-}
-
-int NodePath::get_name_count() const {
-    return api->rebel_node_path_get_name_count(&_node_path);
-}
-
-String NodePath::get_subname(const int idx) const {
-    rebel_string str = api->rebel_node_path_get_subname(&_node_path, idx);
-    return String(str);
-}
-
-int NodePath::get_subname_count() const {
-    return api->rebel_node_path_get_subname_count(&_node_path);
-}
-
-bool NodePath::is_absolute() const {
-    return api->rebel_node_path_is_absolute(&_node_path);
-}
-
-bool NodePath::is_empty() const {
-    return api->rebel_node_path_is_empty(&_node_path);
-}
-
-NodePath NodePath::get_as_property_path() const {
-    rebel_node_path path =
-        core_1_1_api->rebel_node_path_get_as_property_path(&_node_path);
-    return NodePath(path);
-}
-
-String NodePath::get_concatenated_subnames() const {
-    rebel_string str =
-        api->rebel_node_path_get_concatenated_subnames(&_node_path);
-    return String(str);
-}
-
-NodePath::operator String() const {
-    rebel_string str = api->rebel_node_path_as_string(&_node_path);
-    return String(str);
-}
-
-bool NodePath::operator==(const NodePath& other) {
-    return api->rebel_node_path_operator_equal(&_node_path, &other._node_path);
-}
-
-void NodePath::operator=(const NodePath& other) {
-    api->rebel_node_path_destroy(&_node_path);
-
-    String other_string = (String)other;
-
-    api->rebel_node_path_new(&_node_path, (rebel_string*)&other_string);
+    const String from(contents);
+    api->rebel_node_path_new(
+        &internal_node_path,
+        reinterpret_cast<const rebel_string*>(&from)
+    );
 }
 
 NodePath::~NodePath() {
-    api->rebel_node_path_destroy(&_node_path);
+    api->rebel_node_path_destroy(&internal_node_path);
 }
 
+void NodePath::operator=(const NodePath& other) {
+    api->rebel_node_path_destroy(&internal_node_path);
+    const String other_string{other};
+    api->rebel_node_path_new(
+        &internal_node_path,
+        reinterpret_cast<const rebel_string*>(&other_string)
+    );
+}
+
+bool NodePath::operator==(const NodePath& right) const {
+    return api->rebel_node_path_operator_equal(
+        &internal_node_path,
+        &right.internal_node_path
+    );
+}
+
+NodePath::operator String() const {
+    const rebel_string string =
+        api->rebel_node_path_as_string(&internal_node_path);
+    return String(string);
+}
+
+bool NodePath::is_empty() const {
+    return api->rebel_node_path_is_empty(&internal_node_path);
+}
+
+bool NodePath::is_absolute() const {
+    return api->rebel_node_path_is_absolute(&internal_node_path);
+}
+
+int NodePath::get_name_count() const {
+    return api->rebel_node_path_get_name_count(&internal_node_path);
+}
+
+int NodePath::get_subname_count() const {
+    return api->rebel_node_path_get_subname_count(&internal_node_path);
+}
+
+String NodePath::get_name(const int idx) const {
+    const rebel_string string =
+        api->rebel_node_path_get_name(&internal_node_path, idx);
+    return String(string);
+}
+
+String NodePath::get_subname(const int idx) const {
+    const rebel_string string =
+        api->rebel_node_path_get_subname(&internal_node_path, idx);
+    return String(string);
+}
+
+String NodePath::get_concatenated_subnames() const {
+    const rebel_string string =
+        api->rebel_node_path_get_concatenated_subnames(&internal_node_path);
+    return String(string);
+}
+
+NodePath NodePath::get_as_property_path() const {
+    const rebel_node_path property_path =
+        core_1_1_api->rebel_node_path_get_as_property_path(&internal_node_path);
+    return NodePath(property_path);
+}
 } // namespace Rebel
