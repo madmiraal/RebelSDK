@@ -80,9 +80,6 @@ typedef float real_t;
 #define Math_PI  3.1415926535897932384626433833
 #define Math_TAU 6.2831853071795864769252867666
 
-#define _PLANE_EQ_DOT_EPSILON 0.999
-#define _PLANE_EQ_D_EPSILON   0.0001
-
 #ifdef __GNUC__
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)

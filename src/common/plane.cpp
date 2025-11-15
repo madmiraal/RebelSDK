@@ -6,199 +6,181 @@
 
 #include "common/plane.h"
 
-#include "common/vector3.h"
-
 #include <cmath>
 
 namespace Rebel {
+constexpr real_t PLANE_DOT_EPSILON = 0.999;
+constexpr real_t PLANE_EPSILON     = 0.0001;
 
-void Plane::set_normal(const Vector3& p_normal) {
-    this->normal = p_normal;
-}
+Plane::Plane(const Vector3& normal, const real_t distance) :
+    normal(normal),
+    d(distance) {}
 
-Vector3 Plane::project(const Vector3& p_point) const {
-    return p_point - normal * distance_to(p_point);
-}
+Plane::Plane(const Vector3& point, const Vector3& normal) :
+    Plane{normal, normal.dot(point)} {}
 
-void Plane::normalize() {
-    real_t l = normal.length();
-    if (l == 0) {
-        *this = Plane(0, 0, 0, 0);
-        return;
-    }
-    normal /= l;
-    d      /= l;
-}
+Plane::Plane(
+    real_t normal_x,
+    real_t normal_y,
+    real_t normal_z,
+    const real_t distance
+) :
+    Plane{
+        {normal_x, normal_y, normal_z},
+        distance
+} {}
 
-Plane Plane::normalized() const {
-    Plane p = *this;
-    p.normalize();
-    return p;
-}
-
-Vector3 Plane::get_any_point() const {
-    return get_normal() * d;
-}
-
-Vector3 Plane::get_any_perpendicular_normal() const {
-    static const Vector3 p1 = Vector3(1, 0, 0);
-    static const Vector3 p2 = Vector3(0, 1, 0);
-    Vector3 p;
-
-    if (::fabs(normal.dot(p1)) > 0.99) { // if too similar to p1
-        p = p2;                          // use p2
+Plane::Plane(
+    const Vector3& point1,
+    const Vector3& point2,
+    const Vector3& point3,
+    const Direction direction
+) {
+    if (direction == Direction::CLOCKWISE) {
+        normal = (point1 - point3).cross(point1 - point2);
     } else {
-        p = p1; // use p1
+        normal = (point1 - point2).cross(point1 - point3);
     }
-
-    p -= normal * normal.dot(p);
-    p.normalize();
-
-    return p;
+    normal.normalize();
+    d = normal.dot(point1);
 }
 
-/* intersections */
+Plane::operator String() const {
+    // TODO
+    // return normal.operator String() + ", " + rtos(d);
+    return {};
+}
+
+Vector3 Plane::get_normal() const {
+    return normal;
+}
+
+void Plane::set_normal(const Vector3& new_normal) {
+    normal = new_normal;
+}
+
+bool Plane::is_almost_like(const Plane& right) const {
+    return normal.dot(right.normal) > PLANE_DOT_EPSILON
+        && fabs(d - right.d) < PLANE_EPSILON;
+}
+
+bool Plane::is_point_over(const Vector3& point) const {
+    return normal.dot(point) > d;
+}
+
+bool Plane::has_point(const Vector3& point, const real_t epsilon) const {
+    const double separation = fabs(normal.dot(point) - d);
+    return separation <= epsilon;
+}
 
 bool Plane::intersect_3(
-    const Plane& p_plane1,
-    const Plane& p_plane2,
-    Vector3* r_result
+    const Plane& plane1,
+    const Plane& plane2,
+    Vector3* result
 ) const {
-    const Plane& p_plane0 = *this;
-    Vector3 normal0       = p_plane0.normal;
-    Vector3 normal1       = p_plane1.normal;
-    Vector3 normal2       = p_plane2.normal;
-
-    real_t denom = vec3_cross(normal0, normal1).dot(normal2);
-
-    if (::fabs(denom) <= CMP_EPSILON) {
+    const real_t alignment =
+        vec3_cross(normal, plane1.normal).dot(plane2.normal);
+    if (fabs(alignment) <= CMP_EPSILON) {
         return false;
     }
-
-    if (r_result) {
-        *r_result = ((vec3_cross(normal1, normal2) * p_plane0.d)
-                     + (vec3_cross(normal2, normal0) * p_plane1.d)
-                     + (vec3_cross(normal0, normal1) * p_plane2.d))
-                  / denom;
+    if (result) {
+        *result = (vec3_cross(plane1.normal, plane2.normal) * d
+                   + vec3_cross(plane2.normal, normal) * plane1.d
+                   + vec3_cross(normal, plane1.normal) * plane2.d)
+                / alignment;
     }
-
     return true;
 }
 
 bool Plane::intersects_ray(
-    Vector3 p_from,
-    Vector3 p_dir,
-    Vector3* p_intersection
+    const Vector3 from,
+    const Vector3 direction,
+    Vector3* result
 ) const {
-    Vector3 segment = p_dir;
-    real_t den      = normal.dot(segment);
-
-    // printf("den is %i\n",den);
-    if (::fabs(den) <= CMP_EPSILON) {
+    const real_t alignment = normal.dot(direction);
+    if (fabs(alignment) <= CMP_EPSILON) {
         return false;
     }
-
-    real_t dist = (normal.dot(p_from) - d) / den;
-    // printf("dist is %i\n",dist);
-
-    if (dist > CMP_EPSILON) { // this is a ray, before the emiting pos (p_from)
-                              // doesnt exist
-
+    const real_t distance = (normal.dot(from) - d) / alignment;
+    if (distance > CMP_EPSILON) {
         return false;
     }
-
-    dist            = -dist;
-    *p_intersection = p_from + segment * dist;
-
+    if (result) {
+        *result = from + direction * -distance;
+    }
     return true;
 }
 
 bool Plane::intersects_segment(
-    Vector3 p_begin,
-    Vector3 p_end,
-    Vector3* p_intersection
+    const Vector3 begin,
+    const Vector3 end,
+    Vector3* result
 ) const {
-    Vector3 segment = p_begin - p_end;
-    real_t den      = normal.dot(segment);
-
-    // printf("den is %i\n",den);
-    if (::fabs(den) <= CMP_EPSILON) {
+    const Vector3 direction = begin - end;
+    const real_t alignment  = normal.dot(direction);
+    if (fabs(alignment) <= CMP_EPSILON) {
         return false;
     }
-
-    real_t dist = (normal.dot(p_begin) - d) / den;
-    // printf("dist is %i\n",dist);
-
-    if (dist < -CMP_EPSILON || dist > (1.0 + CMP_EPSILON)) {
+    const real_t distance = (normal.dot(begin) - d) / alignment;
+    if (distance < -CMP_EPSILON || distance > 1.0 + CMP_EPSILON) {
         return false;
     }
-
-    dist            = -dist;
-    *p_intersection = p_begin + segment * dist;
-
+    if (result) {
+        *result = begin + direction * -distance;
+    }
     return true;
 }
 
-/* misc */
-
-bool Plane::is_almost_like(const Plane& p_plane) const {
-    return (
-        normal.dot(p_plane.normal) > _PLANE_EQ_DOT_EPSILON
-        && ::fabs(d - p_plane.d) < _PLANE_EQ_D_EPSILON
-    );
-}
-
-Plane::operator String() const {
-    // return normal.operator String() + ", " + rtos(d);
-    return String(); // @Todo
-}
-
-bool Plane::is_point_over(const Vector3& p_point) const {
-    return (normal.dot(p_point) > d);
-}
-
-real_t Plane::distance_to(const Vector3& p_point) const {
-    return (normal.dot(p_point) - d);
-}
-
-bool Plane::has_point(const Vector3& p_point, real_t _epsilon) const {
-    real_t dist = normal.dot(p_point) - d;
-    dist        = ::fabs(dist);
-    return (dist <= _epsilon);
-}
-
-Plane::Plane(const Vector3& p_normal, real_t p_d) {
-    normal = p_normal;
-    d      = p_d;
-}
-
-Plane::Plane(const Vector3& p_point, const Vector3& p_normal) {
-    normal = p_normal;
-    d      = p_normal.dot(p_point);
-}
-
-Plane::Plane(
-    const Vector3& p_point1,
-    const Vector3& p_point2,
-    const Vector3& p_point3,
-    ClockDirection p_dir
-) {
-    if (p_dir == CLOCKWISE) {
-        normal = (p_point1 - p_point3).cross(p_point1 - p_point2);
-    } else {
-        normal = (p_point1 - p_point2).cross(p_point1 - p_point3);
+void Plane::normalize() {
+    const real_t length = normal.length();
+    if (length == 0) {
+        d = 0;
+        return;
     }
-
-    normal.normalize();
-    d = normal.dot(p_point1);
+    normal /= length;
+    d      /= length;
 }
 
-bool Plane::operator==(const Plane& p_plane) const {
-    return normal == p_plane.normal && d == p_plane.d;
+Plane Plane::normalized() const {
+    Plane result = *this;
+    result.normalize();
+    return result;
 }
 
-bool Plane::operator!=(const Plane& p_plane) const {
-    return normal != p_plane.normal || d != p_plane.d;
+real_t Plane::distance_to(const Vector3& point) const {
+    return normal.dot(point) - d;
 }
 
+Vector3 Plane::center() const {
+    return normal * d;
+}
+
+Vector3 Plane::get_any_point() const {
+    return normal * d;
+}
+
+Vector3 Plane::get_any_perpendicular_normal() const {
+    const Vector3 x_axis{1, 0, 0};
+    const Vector3 y_axis{0, 1, 0};
+    const Vector3 axis =
+        fabs(normal.dot(x_axis)) > PLANE_DOT_EPSILON ? y_axis : x_axis;
+    const Vector3 result = axis - normal * normal.dot(axis);
+    return result.normalized();
+}
+
+Vector3 Plane::project(const Vector3& point) const {
+    return point - normal * distance_to(point);
+}
+
+Plane operator-(const Plane& right) {
+    return {-right.normal, -right.d};
+}
+
+bool operator==(const Plane& left, const Plane& right) {
+    return left.normal == right.normal && left.d == right.d;
+}
+
+bool operator!=(const Plane& left, const Plane& right) {
+    return !(left == right);
+}
 } // namespace Rebel

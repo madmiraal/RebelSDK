@@ -9,90 +9,65 @@
 
 #include "common/vector3.h"
 
-#include <cmath>
-
 namespace Rebel {
-
-enum ClockDirection {
-    CLOCKWISE,
-    COUNTERCLOCKWISE
-};
 
 class Plane {
 public:
     Vector3 normal;
-    real_t d;
+    real_t d = 0;
 
-    void set_normal(const Vector3& p_normal);
+    enum class Direction {
+        CLOCKWISE,
+        COUNTERCLOCKWISE
+    };
 
-    inline Vector3 get_normal() const {
-        return normal;
-    } /// Point is coplanar, CMP_EPSILON for precision
+    Plane() = default;
+    Plane(const Vector3& normal, real_t distance);
+    Plane(const Vector3& point, const Vector3& normal);
+    Plane(real_t normal_x, real_t normal_y, real_t normal_z, real_t distance);
+    Plane(
+        const Vector3& point1,
+        const Vector3& point2,
+        const Vector3& point3,
+        Direction direction = Direction::CLOCKWISE
+    );
 
-    void normalize();
-
-    Plane normalized() const;
-
-    /* Plane-Point operations */
-
-    inline Vector3 center() const {
-        return normal * d;
-    }
-
-    Vector3 get_any_point() const;
-    Vector3 get_any_perpendicular_normal() const;
-
-    bool is_point_over(const Vector3& p_point) const; ///< Point is over plane
-    real_t distance_to(const Vector3& p_point) const;
-    bool has_point(const Vector3& p_point, real_t _epsilon = CMP_EPSILON) const;
-
-    /* intersections */
-
-    bool intersect_3(
-        const Plane& p_plane1,
-        const Plane& p_plane2,
-        Vector3* r_result = 0
-    ) const;
-    bool intersects_ray(Vector3 p_from, Vector3 p_dir, Vector3* p_intersection)
-        const;
-    bool intersects_segment(
-        Vector3 p_begin,
-        Vector3 p_end,
-        Vector3* p_intersection
-    ) const;
-
-    Vector3 project(const Vector3& p_point) const;
-
-    /* misc */
-
-    inline Plane operator-() const {
-        return Plane(-normal, -d);
-    }
-
-    bool is_almost_like(const Plane& p_plane) const;
-
-    bool operator==(const Plane& p_plane) const;
-    bool operator!=(const Plane& p_plane) const;
     operator String() const;
 
-    inline Plane() {
-        d = 0;
-    }
+    Vector3 get_normal() const;
+    void set_normal(const Vector3& new_normal);
 
-    inline Plane(real_t p_a, real_t p_b, real_t p_c, real_t p_d) :
-        normal(p_a, p_b, p_c),
-        d(p_d) {}
+    bool is_almost_like(const Plane& right) const;
+    bool is_point_over(const Vector3& point) const;
+    bool has_point(const Vector3& point, real_t epsilon = CMP_EPSILON) const;
+    bool intersect_3(
+        const Plane& plane1,
+        const Plane& plane2,
+        Vector3* result = nullptr
+    ) const;
+    bool intersects_ray(
+        Vector3 from,
+        Vector3 direction,
+        Vector3* result = nullptr
+    ) const;
+    bool intersects_segment(
+        Vector3 begin,
+        Vector3 end,
+        Vector3* result = nullptr
+    ) const;
 
-    Plane(const Vector3& p_normal, real_t p_d);
-    Plane(const Vector3& p_point, const Vector3& p_normal);
-    Plane(
-        const Vector3& p_point1,
-        const Vector3& p_point2,
-        const Vector3& p_point3,
-        ClockDirection p_dir = CLOCKWISE
-    );
+    void normalize();
+    Plane normalized() const;
+    real_t distance_to(const Vector3& point) const;
+    Vector3 center() const;
+    Vector3 get_any_point() const;
+    Vector3 get_any_perpendicular_normal() const;
+    Vector3 project(const Vector3& point) const;
 };
 
+Plane operator-(const Plane& right);
+bool operator==(const Plane& left, const Plane& right);
+bool operator!=(const Plane& left, const Plane& right);
 } // namespace Rebel
 
 #endif // PLANE_H
