@@ -8,7 +8,7 @@
 #define DICTIONARY_H
 
 #include "api/gdnative/dictionary.h"
-#include "common/array.h"
+#include "common/factory.h"
 #include "common/variant.h"
 
 namespace Rebel {
@@ -20,7 +20,7 @@ public:
 
     template <class... Args>
     static Dictionary make(Args... args) {
-        return helpers::add_all(Dictionary(), args...);
+        return Factory::add_all(Dictionary(), args...);
     }
 
     Dictionary& operator=(const Dictionary& other);
