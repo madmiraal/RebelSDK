@@ -41,15 +41,15 @@ void print_error(
     int line
 );
 
-void gdnative_init(rebel_gdnative_init_options* o);
-void gdnative_terminate(rebel_gdnative_terminate_options* o);
+void gdnative_init(const rebel_gdnative_init_options* options);
+void gdnative_terminate(rebel_gdnative_terminate_options* options);
 void nativescript_init(void* handle);
 void nativescript_terminate(void* handle);
-void gdnative_profiling_add_data(const char* p_signature, uint64_t p_time);
+void gdnative_profiling_add_data(const char* signature, uint64_t time);
 
 template <class... Args>
-void print(const String& fmt, Args... values) {
-    print(fmt.format(Array::make(values...)));
+void print(const String& string, Args... values) {
+    print(string.format(Array::make(values...)));
 }
 } // namespace Global
 

@@ -6,34 +6,32 @@
 
 #include "common/rebelglobal.h"
 
-#include "common/string.h"
 #include "common/wrapped.h"
 
 namespace Rebel {
-static GDCALLINGCONV void* wrapper_create(
-    void* data,
+namespace {
+GDCALLINGCONV void* wrapper_create(
+    void*,
     const void* type_tag,
     rebel_object* instance
 ) {
-    Wrapped* wrapper_memory = (Wrapped*)api->rebel_alloc(sizeof(Wrapped));
-
+    auto* wrapper_memory =
+        static_cast<Wrapped*>(api->rebel_alloc(sizeof(Wrapped)));
     if (!wrapper_memory) {
-        return NULL;
+        return nullptr;
     }
     wrapper_memory->owner    = instance;
     wrapper_memory->type_tag = (size_t)type_tag;
 
-    return (void*)wrapper_memory;
+    return wrapper_memory;
 }
 
-static GDCALLINGCONV void wrapper_destroy(void* data, void* wrapper) {
+GDCALLINGCONV void wrapper_destroy(void*, void* wrapper) {
     if (wrapper) {
         api->rebel_free(wrapper);
     }
 }
-
-void* RegisterState::nativescript_handle;
-int RegisterState::language_index;
+} // namespace
 
 const rebel_gdnative_core_api_struct* api                          = nullptr;
 const rebel_gdnative_core_1_1_api_struct* core_1_1_api             = nullptr;
@@ -47,33 +45,29 @@ const rebel_gdnative_ext_arvr_api_struct* arvr_api                 = nullptr;
 const rebel_gdnative_ext_videodecoder_api_struct* videodecoder_api = nullptr;
 const rebel_gdnative_ext_net_api_struct* net_api                   = nullptr;
 const rebel_gdnative_ext_net_3_2_api_struct* net_3_2_api           = nullptr;
-const void* gdnlib                                                 = NULL;
+const void* gdnlib                                                 = nullptr;
 
 void Global::print(const String& message) {
-    api->rebel_print((rebel_string*)&message);
+    api->rebel_print(reinterpret_cast<const rebel_string*>(&message));
 }
 
 void Global::print_warning(
     const String& description,
     const String& function,
     const String& file,
-    int line
+    const int line
 ) {
-    int len;
-
-    char* c_desc = description.alloc_c_string();
-    char* c_func = function.alloc_c_string();
-    char* c_file = file.alloc_c_string();
-
-    if (c_desc != nullptr && c_func != nullptr && c_file != nullptr) {
-        api->rebel_print_warning(c_desc, c_func, c_file, line);
+    char* c_description = description.alloc_c_string();
+    char* c_function    = function.alloc_c_string();
+    char* c_file        = file.alloc_c_string();
+    if (c_description && c_function && c_file) {
+        api->rebel_print_warning(c_description, c_function, c_file, line);
     };
-
-    if (c_desc != nullptr) {
-        api->rebel_free(c_desc);
+    if (c_description != nullptr) {
+        api->rebel_free(c_description);
     }
-    if (c_func != nullptr) {
-        api->rebel_free(c_func);
+    if (c_function != nullptr) {
+        api->rebel_free(c_function);
     }
     if (c_file != nullptr) {
         api->rebel_free(c_file);
@@ -84,23 +78,19 @@ void Global::print_error(
     const String& description,
     const String& function,
     const String& file,
-    int line
+    const int line
 ) {
-    int len;
-
-    char* c_desc = description.alloc_c_string();
-    char* c_func = function.alloc_c_string();
-    char* c_file = file.alloc_c_string();
-
-    if (c_desc != nullptr && c_func != nullptr && c_file != nullptr) {
-        api->rebel_print_error(c_desc, c_func, c_file, line);
+    char* c_description = description.alloc_c_string();
+    char* c_function    = function.alloc_c_string();
+    char* c_file        = file.alloc_c_string();
+    if (c_description && c_function && c_file) {
+        api->rebel_print_error(c_description, c_function, c_file, line);
     };
-
-    if (c_desc != nullptr) {
-        api->rebel_free(c_desc);
+    if (c_description != nullptr) {
+        api->rebel_free(c_description);
     }
-    if (c_func != nullptr) {
-        api->rebel_free(c_func);
+    if (c_function != nullptr) {
+        api->rebel_free(c_function);
     }
     if (c_file != nullptr) {
         api->rebel_free(c_file);
@@ -110,116 +100,135 @@ void Global::print_error(
 void register_types();
 void init_method_bindings();
 
-void Global::gdnative_init(rebel_gdnative_init_options* options) {
-    api    = options->api_struct;
-    gdnlib = options->gd_native_library;
-
-    const rebel_gdnative_api_struct* core_extension = api->next;
-
+void set_core_extensions(const rebel_gdnative_core_api_struct* core_api) {
+    const rebel_gdnative_api_struct* core_extension = core_api->next;
     while (core_extension) {
         if (core_extension->version.major == 1
             && core_extension->version.minor == 1) {
             core_1_1_api =
-                (const rebel_gdnative_core_1_1_api_struct*)core_extension;
+                reinterpret_cast<const rebel_gdnative_core_1_1_api_struct*>(
+                    core_extension
+                );
         } else if (core_extension->version.major == 1
                    && core_extension->version.minor == 2) {
             core_1_2_api =
-                (const rebel_gdnative_core_1_2_api_struct*)core_extension;
+                reinterpret_cast<const rebel_gdnative_core_1_2_api_struct*>(
+                    core_extension
+                );
         }
         core_extension = core_extension->next;
     }
+}
 
-    // now find our extensions
+void set_nativescript_extensions(
+    const rebel_gdnative_ext_nativescript_api_struct* nativescript_api_extension
+) {
+    const rebel_gdnative_api_struct* nativescript_extension =
+        nativescript_api_extension->next;
+    while (nativescript_extension) {
+        if (nativescript_extension->version.major == 1
+            && nativescript_extension->version.minor == 1) {
+            nativescript_1_1_api = reinterpret_cast<
+                const rebel_gdnative_ext_nativescript_1_1_api_struct*>(
+                nativescript_extension
+            );
+        }
+        nativescript_extension = nativescript_extension->next;
+    }
+}
+
+void set_net_extensions(
+    const rebel_gdnative_ext_net_api_struct* net_api_extension
+) {
+    const rebel_gdnative_api_struct* net_extension = net_api_extension->next;
+    while (net_extension) {
+        if (net_extension->version.major == 3
+            && net_extension->version.minor == 2) {
+            net_3_2_api =
+                reinterpret_cast<const rebel_gdnative_ext_net_3_2_api_struct*>(
+                    net_extension
+                );
+        }
+        net_extension = net_extension->next;
+    }
+}
+
+void set_extensions(const rebel_gdnative_core_api_struct* core_api) {
+    set_core_extensions(core_api);
     for (int i = 0; i < api->num_extensions; i++) {
-        switch (api->extensions[i]->type) {
+        const rebel_gdnative_api_struct* extension = core_api->extensions[i];
+        switch (extension->type) {
             case GDNATIVE_EXT_NATIVESCRIPT: {
-                nativescript_api =
-                    (const rebel_gdnative_ext_nativescript_api_struct*)
-                        api->extensions[i];
-
-                const rebel_gdnative_api_struct* extension =
-                    nativescript_api->next;
-
-                while (extension) {
-                    if (extension->version.major == 1
-                        && extension->version.minor == 1) {
-                        nativescript_1_1_api =
-                            (const rebel_gdnative_ext_nativescript_1_1_api_struct*)
-                                extension;
-                    }
-
-                    extension = extension->next;
-                }
+                nativescript_api = reinterpret_cast<
+                    const rebel_gdnative_ext_nativescript_api_struct*>(extension
+                );
+                set_nativescript_extensions(nativescript_api);
             } break;
             case GDNATIVE_EXT_PLUGINSCRIPT: {
-                pluginscript_api =
-                    (const rebel_gdnative_ext_pluginscript_api_struct*)
-                        api->extensions[i];
+                pluginscript_api = reinterpret_cast<
+                    const rebel_gdnative_ext_pluginscript_api_struct*>(extension
+                );
             } break;
             case GDNATIVE_EXT_ANDROID: {
-                android_api = (const rebel_gdnative_ext_android_api_struct*)
-                                  api->extensions[i];
+                android_api = reinterpret_cast<
+                    const rebel_gdnative_ext_android_api_struct*>(extension);
             } break;
             case GDNATIVE_EXT_ARVR: {
-                arvr_api = (const rebel_gdnative_ext_arvr_api_struct*)
-                               api->extensions[i];
+                arvr_api =
+                    reinterpret_cast<const rebel_gdnative_ext_arvr_api_struct*>(
+                        extension
+                    );
             } break;
             case GDNATIVE_EXT_VIDEODECODER: {
-                videodecoder_api =
-                    (const rebel_gdnative_ext_videodecoder_api_struct*)
-                        api->extensions[i];
+                videodecoder_api = reinterpret_cast<
+                    const rebel_gdnative_ext_videodecoder_api_struct*>(extension
+                );
             } break;
             case GDNATIVE_EXT_NET: {
-                net_api = (const rebel_gdnative_ext_net_api_struct*)
-                              api->extensions[i];
-
-                const rebel_gdnative_api_struct* extension = net_api->next;
-
-                while (extension) {
-                    if (extension->version.major == 3
-                        && extension->version.minor == 2) {
-                        net_3_2_api =
-                            (const rebel_gdnative_ext_net_3_2_api_struct*)
-                                extension;
-                    }
-
-                    extension = extension->next;
-                }
+                net_api =
+                    reinterpret_cast<const rebel_gdnative_ext_net_api_struct*>(
+                        extension
+                    );
+                set_net_extensions(net_api);
             } break;
-
             default:
                 break;
         }
     }
+}
 
-    // Initialize the `language_index` here since `__register_types()` makes use
-    // of it.
-    rebel_instance_binding_functions binding_funcs = {};
-    binding_funcs.alloc_instance_binding_data      = wrapper_create;
-    binding_funcs.free_instance_binding_data       = wrapper_destroy;
-
+void set_language_index() {
+    rebel_instance_binding_functions binding_data_functions = {};
+    binding_data_functions.alloc_instance_binding_data      = wrapper_create;
+    binding_data_functions.free_instance_binding_data       = wrapper_destroy;
     RegisterState::language_index =
         nativescript_1_1_api
             ->rebel_nativescript_register_instance_binding_data_functions(
-                binding_funcs
+                binding_data_functions
             );
+}
 
-    // register these now
+void Global::gdnative_init(const rebel_gdnative_init_options* options) {
+    api    = options->api_struct;
+    gdnlib = options->gd_native_library;
+    set_extensions(api);
+    // Set language index before registering types().
+    set_language_index();
     register_types();
     init_method_bindings();
 }
 
-void Global::gdnative_terminate(rebel_gdnative_terminate_options* options) {
-    // reserved for future use.
+void Global::gdnative_terminate(rebel_gdnative_terminate_options*) {
+    // Nothing to do.
 }
 
 void Global::gdnative_profiling_add_data(
-    const char* p_signature,
-    uint64_t p_time
+    const char* signature,
+    const uint64_t time
 ) {
     nativescript_1_1_api->rebel_nativescript_profiling_add_data(
-        p_signature,
-        p_time
+        signature,
+        time
     );
 }
 
