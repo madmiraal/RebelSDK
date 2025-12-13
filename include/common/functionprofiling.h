@@ -9,6 +9,8 @@
 
 #include "classes/os.h"
 
+#include <cstdio>
+
 namespace Rebel {
 
 class FunctionProfiling {
