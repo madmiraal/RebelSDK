@@ -10,34 +10,28 @@
 #include "api/gdnative/rid.h"
 
 namespace Rebel {
-
 class Object;
 
 class RID {
-    rebel_rid _rebel_rid;
-
 public:
     RID();
-
-    RID(Object* p);
-
-    rebel_rid _get_rebel_rid() const;
+    RID(const Object* object);
 
     int32_t get_id() const;
+    rebel_rid _get_rebel_rid() const;
 
-    inline bool is_valid() const {
-        // is_valid() is not available in the C API...
-        return *this != RID();
-    }
+    bool is_valid() const;
 
-    bool operator==(const RID& p_other) const;
-    bool operator!=(const RID& p_other) const;
-    bool operator<(const RID& p_other) const;
-    bool operator>(const RID& p_other) const;
-    bool operator<=(const RID& p_other) const;
-    bool operator>=(const RID& p_other) const;
+private:
+    rebel_rid internal_rid;
 };
 
+bool operator==(const RID& left, const RID& right);
+bool operator!=(const RID& left, const RID& right);
+bool operator<(const RID& left, const RID& right);
+bool operator<=(const RID& left, const RID& right);
+bool operator>(const RID& left, const RID& right);
+bool operator>=(const RID& left, const RID& right);
 } // namespace Rebel
 
 #endif // RID_H

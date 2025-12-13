@@ -9,45 +9,54 @@
 #include "common/rebelglobal.h"
 
 namespace Rebel {
-
 RID::RID() {
-    api->rebel_rid_new(&_rebel_rid);
+    api->rebel_rid_new(&internal_rid);
 }
 
-RID::RID(Object* p) {
-    api->rebel_rid_new_with_resource(&_rebel_rid, (const rebel_object*)p);
-}
-
-rebel_rid RID::_get_rebel_rid() const {
-    return _rebel_rid;
+RID::RID(const Object* object) {
+    api->rebel_rid_new_with_resource(
+        &internal_rid,
+        static_cast<const rebel_object*>(object)
+    );
 }
 
 int32_t RID::get_id() const {
-    return api->rebel_rid_get_id(&_rebel_rid);
+    return api->rebel_rid_get_id(&internal_rid);
 }
 
-bool RID::operator==(const RID& p_other) const {
-    return api->rebel_rid_operator_equal(&_rebel_rid, &p_other._rebel_rid);
+rebel_rid RID::_get_rebel_rid() const {
+    return internal_rid;
 }
 
-bool RID::operator!=(const RID& p_other) const {
-    return !(*this == p_other);
+bool RID::is_valid() const {
+    return *this != RID();
 }
 
-bool RID::operator<(const RID& p_other) const {
-    return api->rebel_rid_operator_less(&_rebel_rid, &p_other._rebel_rid);
+bool operator==(const RID& left, const RID& right) {
+    const rebel_rid left_rebel_rid  = left._get_rebel_rid();
+    const rebel_rid right_rebel_rid = right._get_rebel_rid();
+    return api->rebel_rid_operator_equal(&left_rebel_rid, &right_rebel_rid);
 }
 
-bool RID::operator>(const RID& p_other) const {
-    return !(*this < p_other) && *this != p_other;
+bool operator!=(const RID& left, const RID& right) {
+    return !(left == right);
 }
 
-bool RID::operator<=(const RID& p_other) const {
-    return (*this < p_other) || *this == p_other;
+bool operator<(const RID& left, const RID& right) {
+    const rebel_rid left_rebel_rid  = left._get_rebel_rid();
+    const rebel_rid right_rebel_rid = right._get_rebel_rid();
+    return api->rebel_rid_operator_less(&left_rebel_rid, &right_rebel_rid);
 }
 
-bool RID::operator>=(const RID& p_other) const {
-    return !(*this < p_other);
+bool operator<=(const RID& left, const RID& right) {
+    return left == right || left < right;
 }
 
+bool operator>(const RID& left, const RID& right) {
+    return !(left <= right);
+}
+
+bool operator>=(const RID& left, const RID& right) {
+    return !(left < right);
+}
 } // namespace Rebel
