@@ -7,28 +7,17 @@
 #ifndef FUNCTION_PROFILING_H
 #define FUNCTION_PROFILING_H
 
-#include "classes/os.h"
-
-#include <cstdio>
+#include "common/defs.h"
 
 namespace Rebel {
-
 class FunctionProfiling {
+public:
+    FunctionProfiling(const char* function, int line);
+    ~FunctionProfiling();
+
+private:
     char signature[1024];
     uint64_t ticks;
-
-public:
-    FunctionProfiling(const char* p_function, const int p_line) {
-        snprintf(signature, 1024, "::%d::%s", p_line, p_function);
-        ticks = OS::get_singleton()->get_ticks_usec();
-    }
-
-    ~FunctionProfiling() {
-        uint64_t t = OS::get_singleton()->get_ticks_usec() - ticks;
-        if (t > 0) {
-            Global::gdnative_profiling_add_data(signature, t);
-        }
-    }
 };
 } // namespace Rebel
 
