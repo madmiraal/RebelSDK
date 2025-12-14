@@ -184,7 +184,7 @@ public:
 
     void instance() {
         // ref(memnew(T));
-        ref(T::create());
+        ref_pointer(T::create());
     }
 
     Ref() {
