@@ -8,196 +8,246 @@
 
 #include "classes/object.h"
 #include "common/commontypes.h"
-#include "common/defs.h"
 #include "common/rebelglobal.h"
 
 namespace Rebel {
-
 Variant::Variant() {
-    api->rebel_variant_new_nil(&_rebel_variant);
+    api->rebel_variant_new_nil(&internal_variant);
 }
 
-Variant::Variant(const Variant& v) {
-    api->rebel_variant_new_copy(&_rebel_variant, &v._rebel_variant);
+Variant::Variant(const Variant& other) {
+    api->rebel_variant_new_copy(&internal_variant, &other.internal_variant);
 }
 
-Variant::Variant(bool p_bool) {
-    api->rebel_variant_new_bool(&_rebel_variant, p_bool);
+Variant::Variant(const bool from_bool) {
+    api->rebel_variant_new_bool(&internal_variant, from_bool);
 }
 
-Variant::Variant(signed int p_int) // real one
-{
-    api->rebel_variant_new_int(&_rebel_variant, p_int);
+Variant::Variant(const signed char from_signed_char) {
+    api->rebel_variant_new_int(&internal_variant, from_signed_char);
 }
 
-Variant::Variant(unsigned int p_int) {
-    api->rebel_variant_new_uint(&_rebel_variant, p_int);
+Variant::Variant(const unsigned char from_unsigned_char) {
+    api->rebel_variant_new_uint(&internal_variant, from_unsigned_char);
 }
 
-Variant::Variant(signed short p_short) // real one
-{
-    api->rebel_variant_new_int(&_rebel_variant, (int)p_short);
+Variant::Variant(const short from_short) {
+    api->rebel_variant_new_int(&internal_variant, from_short);
 }
 
-Variant::Variant(int64_t p_char) // real one
-{
-    api->rebel_variant_new_int(&_rebel_variant, p_char);
+Variant::Variant(const unsigned short from_unsigned_short) {
+    api->rebel_variant_new_uint(&internal_variant, from_unsigned_short);
 }
 
-Variant::Variant(uint64_t p_char) {
-    api->rebel_variant_new_uint(&_rebel_variant, p_char);
+Variant::Variant(const int from_int) {
+    api->rebel_variant_new_int(&internal_variant, from_int);
 }
 
-Variant::Variant(float p_float) {
-    api->rebel_variant_new_real(&_rebel_variant, p_float);
+Variant::Variant(const unsigned int from_unsigned_int) {
+    api->rebel_variant_new_uint(&internal_variant, from_unsigned_int);
 }
 
-Variant::Variant(double p_double) {
-    api->rebel_variant_new_real(&_rebel_variant, p_double);
+Variant::Variant(const int64_t from_64_bit_int) {
+    api->rebel_variant_new_int(&internal_variant, from_64_bit_int);
 }
 
-Variant::Variant(const String& p_string) {
-    api->rebel_variant_new_string(&_rebel_variant, (rebel_string*)&p_string);
+Variant::Variant(const uint64_t from_unsigned_64_bit_int) {
+    api->rebel_variant_new_uint(&internal_variant, from_unsigned_64_bit_int);
 }
 
-Variant::Variant(const char* const p_cstring) {
-    String s = String(p_cstring);
-    api->rebel_variant_new_string(&_rebel_variant, (rebel_string*)&s);
+Variant::Variant(const float from_float) {
+    api->rebel_variant_new_real(&internal_variant, from_float);
 }
 
-Variant::Variant(const wchar_t* p_wstring) {
-    String s = p_wstring;
-    api->rebel_variant_new_string(&_rebel_variant, (rebel_string*)&s);
+Variant::Variant(const double from_double) {
+    api->rebel_variant_new_real(&internal_variant, from_double);
 }
 
-Variant::Variant(const Vector2& p_vector2) {
-    api->rebel_variant_new_vector2(&_rebel_variant, (rebel_vector2*)&p_vector2);
-}
-
-Variant::Variant(const Rect2& p_rect2) {
-    api->rebel_variant_new_rect2(&_rebel_variant, (rebel_rect2*)&p_rect2);
-}
-
-Variant::Variant(const Vector3& p_vector3) {
-    api->rebel_variant_new_vector3(&_rebel_variant, (rebel_vector3*)&p_vector3);
-}
-
-Variant::Variant(const Plane& p_plane) {
-    api->rebel_variant_new_plane(&_rebel_variant, (rebel_plane*)&p_plane);
-}
-
-Variant::Variant(const AABB& p_aabb) {
-    api->rebel_variant_new_aabb(&_rebel_variant, (rebel_aabb*)&p_aabb);
-}
-
-Variant::Variant(const Quat& p_quat) {
-    api->rebel_variant_new_quat(&_rebel_variant, (rebel_quat*)&p_quat);
-}
-
-Variant::Variant(const Basis& p_transform) {
-    api->rebel_variant_new_basis(&_rebel_variant, (rebel_basis*)&p_transform);
-}
-
-Variant::Variant(const Transform2D& p_transform) {
-    api->rebel_variant_new_transform2d(
-        &_rebel_variant,
-        (rebel_transform2d*)&p_transform
+Variant::Variant(const String& string) {
+    api->rebel_variant_new_string(
+        &internal_variant,
+        reinterpret_cast<const rebel_string*>(&string)
     );
 }
 
-Variant::Variant(const Transform& p_transform) {
-    api->rebel_variant_new_transform(
-        &_rebel_variant,
-        (rebel_transform*)&p_transform
+Variant::Variant(const char* const characters) {
+    const String string(characters);
+    api->rebel_variant_new_string(
+        &internal_variant,
+        reinterpret_cast<const rebel_string*>(&string)
     );
 }
 
-Variant::Variant(const Color& p_color) {
-    api->rebel_variant_new_color(&_rebel_variant, (rebel_color*)&p_color);
-}
-
-Variant::Variant(const NodePath& p_path) {
-    api->rebel_variant_new_node_path(
-        &_rebel_variant,
-        (rebel_node_path*)&p_path
+Variant::Variant(const wchar_t* wide_characters) {
+    const String string(wide_characters);
+    api->rebel_variant_new_string(
+        &internal_variant,
+        reinterpret_cast<const rebel_string*>(&string)
     );
 }
 
-Variant::Variant(const RID& p_rid) {
-    api->rebel_variant_new_rid(&_rebel_variant, (rebel_rid*)&p_rid);
-}
-
-Variant::Variant(const Object* p_object) {
-    if (p_object) {
-        api->rebel_variant_new_object(&_rebel_variant, p_object->owner);
+Variant::Variant(const Object* object) {
+    if (object) {
+        api->rebel_variant_new_object(&internal_variant, object->owner);
     } else {
-        api->rebel_variant_new_nil(&_rebel_variant);
+        api->rebel_variant_new_nil(&internal_variant);
     }
 }
 
-Variant::Variant(const Dictionary& p_dictionary) {
+Variant::Variant(const Vector2& vector2) {
+    api->rebel_variant_new_vector2(
+        &internal_variant,
+        reinterpret_cast<const rebel_vector2*>(&vector2)
+    );
+}
+
+Variant::Variant(const Vector3& vector3) {
+    api->rebel_variant_new_vector3(
+        &internal_variant,
+        reinterpret_cast<const rebel_vector3*>(&vector3)
+    );
+}
+
+Variant::Variant(const Quat& quaternion) {
+    api->rebel_variant_new_quat(
+        &internal_variant,
+        reinterpret_cast<const rebel_quat*>(&quaternion)
+    );
+}
+
+Variant::Variant(const Rect2& rect2) {
+    api->rebel_variant_new_rect2(
+        &internal_variant,
+        reinterpret_cast<const rebel_rect2*>(&rect2)
+    );
+}
+
+Variant::Variant(const AABB& aabb) {
+    api->rebel_variant_new_aabb(
+        &internal_variant,
+        reinterpret_cast<const rebel_aabb*>(&aabb)
+    );
+}
+
+Variant::Variant(const Basis& basis) {
+    api->rebel_variant_new_basis(
+        &internal_variant,
+        reinterpret_cast<const rebel_basis*>(&basis)
+    );
+}
+
+Variant::Variant(const Transform2D& transform2d) {
+    api->rebel_variant_new_transform2d(
+        &internal_variant,
+        reinterpret_cast<const rebel_transform2d*>(&transform2d)
+    );
+}
+
+Variant::Variant(const Transform& transform) {
+    api->rebel_variant_new_transform(
+        &internal_variant,
+        reinterpret_cast<const rebel_transform*>(&transform)
+    );
+}
+
+Variant::Variant(const Plane& plane) {
+    api->rebel_variant_new_plane(
+        &internal_variant,
+        reinterpret_cast<const rebel_plane*>(&plane)
+    );
+}
+
+Variant::Variant(const Color& color) {
+    api->rebel_variant_new_color(
+        &internal_variant,
+        reinterpret_cast<const rebel_color*>(&color)
+    );
+}
+
+Variant::Variant(const NodePath& node_path) {
+    api->rebel_variant_new_node_path(
+        &internal_variant,
+        reinterpret_cast<const rebel_node_path*>(&node_path)
+    );
+}
+
+Variant::Variant(const RID& rid) {
+    api->rebel_variant_new_rid(
+        &internal_variant,
+        reinterpret_cast<const rebel_rid*>(&rid)
+    );
+}
+
+Variant::Variant(const Dictionary& dictionary) {
     api->rebel_variant_new_dictionary(
-        &_rebel_variant,
-        (rebel_dictionary*)&p_dictionary
+        &internal_variant,
+        reinterpret_cast<const rebel_dictionary*>(&dictionary)
     );
 }
 
-Variant::Variant(const Array& p_array) {
-    api->rebel_variant_new_array(&_rebel_variant, (rebel_array*)&p_array);
+Variant::Variant(const Array& array) {
+    api->rebel_variant_new_array(
+        &internal_variant,
+        reinterpret_cast<const rebel_array*>(&array)
+    );
 }
 
-Variant::Variant(const PoolByteArray& p_raw_array) {
+Variant::Variant(const PoolByteArray& byte_array) {
     api->rebel_variant_new_pool_byte_array(
-        &_rebel_variant,
-        (rebel_pool_byte_array*)&p_raw_array
+        &internal_variant,
+        reinterpret_cast<const rebel_pool_byte_array*>(&byte_array)
     );
 }
 
-Variant::Variant(const PoolIntArray& p_int_array) {
-    api->rebel_variant_new_pool_int_array(
-        &_rebel_variant,
-        (rebel_pool_int_array*)&p_int_array
-    );
-}
-
-Variant::Variant(const PoolRealArray& p_real_array) {
-    api->rebel_variant_new_pool_real_array(
-        &_rebel_variant,
-        (rebel_pool_real_array*)&p_real_array
-    );
-}
-
-Variant::Variant(const PoolStringArray& p_string_array) {
-    api->rebel_variant_new_pool_string_array(
-        &_rebel_variant,
-        (rebel_pool_string_array*)&p_string_array
-    );
-}
-
-Variant::Variant(const PoolVector2Array& p_vector2_array) {
-    api->rebel_variant_new_pool_vector2_array(
-        &_rebel_variant,
-        (rebel_pool_vector2_array*)&p_vector2_array
-    );
-}
-
-Variant::Variant(const PoolVector3Array& p_vector3_array) {
-    api->rebel_variant_new_pool_vector3_array(
-        &_rebel_variant,
-        (rebel_pool_vector3_array*)&p_vector3_array
-    );
-}
-
-Variant::Variant(const PoolColorArray& p_color_array) {
+Variant::Variant(const PoolColorArray& color_array) {
     api->rebel_variant_new_pool_color_array(
-        &_rebel_variant,
-        (rebel_pool_color_array*)&p_color_array
+        &internal_variant,
+        reinterpret_cast<const rebel_pool_color_array*>(&color_array)
     );
 }
 
-Variant& Variant::operator=(const Variant& v) {
-    api->rebel_variant_destroy(&_rebel_variant);
-    api->rebel_variant_new_copy(&_rebel_variant, &v._rebel_variant);
+Variant::Variant(const PoolIntArray& int_array) {
+    api->rebel_variant_new_pool_int_array(
+        &internal_variant,
+        reinterpret_cast<const rebel_pool_int_array*>(&int_array)
+    );
+}
+
+Variant::Variant(const PoolRealArray& real_array) {
+    api->rebel_variant_new_pool_real_array(
+        &internal_variant,
+        reinterpret_cast<const rebel_pool_real_array*>(&real_array)
+    );
+}
+
+Variant::Variant(const PoolStringArray& string_array) {
+    api->rebel_variant_new_pool_string_array(
+        &internal_variant,
+        reinterpret_cast<const rebel_pool_string_array*>(&string_array)
+    );
+}
+
+Variant::Variant(const PoolVector2Array& vector2_array) {
+    api->rebel_variant_new_pool_vector2_array(
+        &internal_variant,
+        reinterpret_cast<const rebel_pool_vector2_array*>(&vector2_array)
+    );
+}
+
+Variant::Variant(const PoolVector3Array& vector3_array) {
+    api->rebel_variant_new_pool_vector3_array(
+        &internal_variant,
+        reinterpret_cast<const rebel_pool_vector3_array*>(&vector3_array)
+    );
+}
+
+Variant::~Variant() {
+    api->rebel_variant_destroy(&internal_variant);
+}
+
+Variant& Variant::operator=(const Variant& other) {
+    api->rebel_variant_destroy(&internal_variant);
+    api->rebel_variant_new_copy(&internal_variant, &other.internal_variant);
     return *this;
 }
 
@@ -205,235 +255,239 @@ Variant::operator bool() const {
     return booleanize();
 }
 
-Variant::operator signed int() const {
-    return api->rebel_variant_as_int(&_rebel_variant);
-}
-
-Variant::operator unsigned int() const // this is the real one
-{
-    return api->rebel_variant_as_uint(&_rebel_variant);
-}
-
-Variant::operator signed short() const {
-    return api->rebel_variant_as_int(&_rebel_variant);
-}
-
-Variant::operator unsigned short() const {
-    return api->rebel_variant_as_uint(&_rebel_variant);
-}
-
 Variant::operator signed char() const {
-    return api->rebel_variant_as_int(&_rebel_variant);
+    return static_cast<signed char>(api->rebel_variant_as_int(&internal_variant)
+    );
 }
 
 Variant::operator unsigned char() const {
-    return api->rebel_variant_as_uint(&_rebel_variant);
+    return static_cast<unsigned char>(
+        api->rebel_variant_as_uint(&internal_variant)
+    );
+}
+
+Variant::operator short() const {
+    return static_cast<short>(api->rebel_variant_as_int(&internal_variant));
+}
+
+Variant::operator unsigned short() const {
+    return static_cast<unsigned short>(
+        api->rebel_variant_as_uint(&internal_variant)
+    );
+}
+
+Variant::operator int() const {
+    return static_cast<int>(api->rebel_variant_as_int(&internal_variant));
+}
+
+Variant::operator unsigned int() const {
+    return static_cast<unsigned int>(
+        api->rebel_variant_as_uint(&internal_variant)
+    );
 }
 
 Variant::operator int64_t() const {
-    return api->rebel_variant_as_int(&_rebel_variant);
+    return api->rebel_variant_as_int(&internal_variant);
 }
 
 Variant::operator uint64_t() const {
-    return api->rebel_variant_as_uint(&_rebel_variant);
+    return api->rebel_variant_as_uint(&internal_variant);
 }
 
 Variant::operator wchar_t() const {
-    return api->rebel_variant_as_int(&_rebel_variant);
+    return static_cast<wchar_t>(api->rebel_variant_as_int(&internal_variant));
 }
 
 Variant::operator float() const {
-    return api->rebel_variant_as_real(&_rebel_variant);
+    return static_cast<float>(api->rebel_variant_as_real(&internal_variant));
 }
 
 Variant::operator double() const {
-    return api->rebel_variant_as_real(&_rebel_variant);
+    return api->rebel_variant_as_real(&internal_variant);
 }
 
 Variant::operator String() const {
-    rebel_string s = api->rebel_variant_as_string(&_rebel_variant);
-    return String(s);
+    const rebel_string string = api->rebel_variant_as_string(&internal_variant);
+    return String(string);
 }
 
 Variant::operator Vector2() const {
-    rebel_vector2 s = api->rebel_variant_as_vector2(&_rebel_variant);
-    return *(Vector2*)&s;
-}
-
-Variant::operator Rect2() const {
-    rebel_rect2 s = api->rebel_variant_as_rect2(&_rebel_variant);
-    return *(Rect2*)&s;
+    rebel_vector2 vector2 = api->rebel_variant_as_vector2(&internal_variant);
+    return *reinterpret_cast<Vector2*>(&vector2);
 }
 
 Variant::operator Vector3() const {
-    rebel_vector3 s = api->rebel_variant_as_vector3(&_rebel_variant);
-    return *(Vector3*)&s;
-}
-
-Variant::operator Plane() const {
-    rebel_plane s = api->rebel_variant_as_plane(&_rebel_variant);
-    return *(Plane*)&s;
-}
-
-Variant::operator AABB() const {
-    rebel_aabb s = api->rebel_variant_as_aabb(&_rebel_variant);
-    return *(AABB*)&s;
+    rebel_vector3 vector3 = api->rebel_variant_as_vector3(&internal_variant);
+    return *reinterpret_cast<Vector3*>(&vector3);
 }
 
 Variant::operator Quat() const {
-    rebel_quat s = api->rebel_variant_as_quat(&_rebel_variant);
-    return *(Quat*)&s;
+    rebel_quat quat = api->rebel_variant_as_quat(&internal_variant);
+    return *reinterpret_cast<Quat*>(&quat);
+}
+
+Variant::operator Rect2() const {
+    rebel_rect2 rect2 = api->rebel_variant_as_rect2(&internal_variant);
+    return *reinterpret_cast<Rect2*>(&rect2);
+}
+
+Variant::operator AABB() const {
+    rebel_aabb aabb = api->rebel_variant_as_aabb(&internal_variant);
+    return *reinterpret_cast<AABB*>(&aabb);
 }
 
 Variant::operator Basis() const {
-    rebel_basis s = api->rebel_variant_as_basis(&_rebel_variant);
-    return *(Basis*)&s;
-}
-
-Variant::operator Transform() const {
-    rebel_transform s = api->rebel_variant_as_transform(&_rebel_variant);
-    return *(Transform*)&s;
+    rebel_basis basis = api->rebel_variant_as_basis(&internal_variant);
+    return *reinterpret_cast<Basis*>(&basis);
 }
 
 Variant::operator Transform2D() const {
-    rebel_transform2d s = api->rebel_variant_as_transform2d(&_rebel_variant);
-    return *(Transform2D*)&s;
+    rebel_transform2d transform2d =
+        api->rebel_variant_as_transform2d(&internal_variant);
+    return *reinterpret_cast<Transform2D*>(&transform2d);
+}
+
+Variant::operator Transform() const {
+    rebel_transform transform =
+        api->rebel_variant_as_transform(&internal_variant);
+    return *reinterpret_cast<Transform*>(&transform);
+}
+
+Variant::operator Plane() const {
+    rebel_plane plane = api->rebel_variant_as_plane(&internal_variant);
+    return *reinterpret_cast<Plane*>(&plane);
 }
 
 Variant::operator Color() const {
-    rebel_color s = api->rebel_variant_as_color(&_rebel_variant);
-    return *(Color*)&s;
+    rebel_color color = api->rebel_variant_as_color(&internal_variant);
+    return *reinterpret_cast<Color*>(&color);
 }
 
 Variant::operator NodePath() const {
-    rebel_node_path ret = api->rebel_variant_as_node_path(&_rebel_variant);
-    return NodePath(ret);
+    return NodePath(api->rebel_variant_as_node_path(&internal_variant));
 }
 
 Variant::operator RID() const {
-    rebel_rid s = api->rebel_variant_as_rid(&_rebel_variant);
-    return *(RID*)&s;
+    rebel_rid rid = api->rebel_variant_as_rid(&internal_variant);
+    return *reinterpret_cast<RID*>(&rid);
 }
 
 Variant::operator Dictionary() const {
-    Dictionary ret(api->rebel_variant_as_dictionary(&_rebel_variant));
-    return ret;
+    return Dictionary(api->rebel_variant_as_dictionary(&internal_variant));
 }
 
 Variant::operator Array() const {
-    Array ret(api->rebel_variant_as_array(&_rebel_variant));
-    return ret;
+    return Array(api->rebel_variant_as_array(&internal_variant));
 }
 
 Variant::operator PoolByteArray() const {
-    rebel_pool_byte_array ret =
-        api->rebel_variant_as_pool_byte_array(&_rebel_variant);
-    return PoolByteArray(ret);
-}
-
-Variant::operator PoolIntArray() const {
-    rebel_pool_int_array ret =
-        api->rebel_variant_as_pool_int_array(&_rebel_variant);
-    return PoolIntArray(ret);
-}
-
-Variant::operator PoolRealArray() const {
-    rebel_pool_real_array ret =
-        api->rebel_variant_as_pool_real_array(&_rebel_variant);
-    return PoolRealArray(ret);
-}
-
-Variant::operator PoolStringArray() const {
-    rebel_pool_string_array ret =
-        api->rebel_variant_as_pool_string_array(&_rebel_variant);
-    return PoolStringArray(ret);
-}
-
-Variant::operator PoolVector2Array() const {
-    rebel_pool_vector2_array ret =
-        api->rebel_variant_as_pool_vector2_array(&_rebel_variant);
-    return PoolVector2Array(ret);
-}
-
-Variant::operator PoolVector3Array() const {
-    rebel_pool_vector3_array ret =
-        api->rebel_variant_as_pool_vector3_array(&_rebel_variant);
-    return PoolVector3Array(ret);
+    return PoolByteArray(api->rebel_variant_as_pool_byte_array(&internal_variant
+    ));
 }
 
 Variant::operator PoolColorArray() const {
-    rebel_pool_color_array ret =
-        api->rebel_variant_as_pool_color_array(&_rebel_variant);
-    return PoolColorArray(ret);
+    return PoolColorArray(
+        api->rebel_variant_as_pool_color_array(&internal_variant)
+    );
+}
+
+Variant::operator PoolIntArray() const {
+    return PoolIntArray(api->rebel_variant_as_pool_int_array(&internal_variant)
+    );
+}
+
+Variant::operator PoolRealArray() const {
+    return PoolRealArray(api->rebel_variant_as_pool_real_array(&internal_variant
+    ));
+}
+
+Variant::operator PoolStringArray() const {
+    return PoolStringArray(
+        api->rebel_variant_as_pool_string_array(&internal_variant)
+    );
+}
+
+Variant::operator PoolVector2Array() const {
+    return PoolVector2Array(
+        api->rebel_variant_as_pool_vector2_array(&internal_variant)
+    );
+}
+
+Variant::operator PoolVector3Array() const {
+    return PoolVector3Array(
+        api->rebel_variant_as_pool_vector3_array(&internal_variant)
+    );
 }
 
 Variant::operator rebel_object*() const {
-    return api->rebel_variant_as_object(&_rebel_variant);
+    return api->rebel_variant_as_object(&internal_variant);
+}
+
+bool Variant::operator==(const Variant& right) const {
+    return api->rebel_variant_operator_equal(
+        &internal_variant,
+        &right.internal_variant
+    );
+}
+
+bool Variant::operator<(const Variant& right) const {
+    return api->rebel_variant_operator_less(
+        &internal_variant,
+        &right.internal_variant
+    );
+}
+
+bool Variant::booleanize() const {
+    return api->rebel_variant_booleanize(&internal_variant);
+}
+
+bool Variant::hash_compare(const Variant& right) const {
+    return api->rebel_variant_hash_compare(
+        &internal_variant,
+        &right.internal_variant
+    );
+}
+
+bool Variant::has_method(const String& method) const {
+    return api->rebel_variant_has_method(
+        &internal_variant,
+        reinterpret_cast<const rebel_string*>(&method)
+    );
 }
 
 Variant::Type Variant::get_type() const {
-    return static_cast<Type>(api->rebel_variant_get_type(&_rebel_variant));
+    return static_cast<Type>(api->rebel_variant_get_type(&internal_variant));
 }
 
 Variant Variant::call(
     const String& method,
-    const Variant** args,
-    const int arg_count
+    const Variant** arguments,
+    const int argument_count
 ) {
-    rebel_variant v = api->rebel_variant_call(
-        &_rebel_variant,
-        (rebel_string*)&method,
-        (const rebel_variant**)args,
-        arg_count,
+    return Variant(api->rebel_variant_call(
+        &internal_variant,
+        reinterpret_cast<const rebel_string*>(&method),
+        reinterpret_cast<const rebel_variant**>(arguments),
+        argument_count,
         nullptr
-    );
-    return Variant(v);
+    ));
 }
 
-bool Variant::has_method(const String& method) {
-    return api->rebel_variant_has_method(
-        &_rebel_variant,
-        (rebel_string*)&method
-    );
+Variant::Variant(const rebel_variant& other) : internal_variant(other) {}
+
+bool operator!=(const Variant& left, const Variant& right) {
+    return !(left == right);
 }
 
-bool Variant::operator==(const Variant& b) const {
-    return api->rebel_variant_operator_equal(
-        &_rebel_variant,
-        &b._rebel_variant
-    );
+bool operator<=(const Variant& left, const Variant& right) {
+    return left < right || left == right;
 }
 
-bool Variant::operator!=(const Variant& b) const {
-    return !(*this == b);
+bool operator>(const Variant& left, const Variant& right) {
+    return !(left <= right);
 }
 
-bool Variant::operator<(const Variant& b) const {
-    return api->rebel_variant_operator_less(&_rebel_variant, &b._rebel_variant);
+bool operator>=(const Variant& left, const Variant& right) {
+    return left > right || left == right;
 }
-
-bool Variant::operator<=(const Variant& b) const {
-    return (*this < b) || (*this == b);
-}
-
-bool Variant::operator>(const Variant& b) const {
-    return !(*this <= b);
-}
-
-bool Variant::operator>=(const Variant& b) const {
-    return !(*this < b);
-}
-
-bool Variant::hash_compare(const Variant& b) const {
-    return api->rebel_variant_hash_compare(&_rebel_variant, &b._rebel_variant);
-}
-
-bool Variant::booleanize() const {
-    return api->rebel_variant_booleanize(&_rebel_variant);
-}
-
-Variant::~Variant() {
-    api->rebel_variant_destroy(&_rebel_variant);
-}
-
 } // namespace Rebel
